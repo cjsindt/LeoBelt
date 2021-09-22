@@ -13,14 +13,14 @@
 #include <WiFi.h>
 
 // REPLACE WITH YOUR ESP RECEIVER'S MAC ADDRESS
-uint8_t broadcastAddress1[] = {0x4C, 0x11, 0xAE, 0x77, 0x9D, 0x20};
-uint8_t broadcastAddress2[] = {0x4C, 0x11, 0xAE, 0x77, 0xA2, 0x74};
-uint8_t broadcastAddress3[] = {0x24, 0x6F, 0x28, 0xA6, 0x8B, 0x94};
-uint8_t broadcastAddress4[] = {0x4C, 0x11, 0xAE, 0x76, 0x8B, 0xAC};
-uint8_t broadcastAddress5[] = {0x24, 0x6F, 0x28, 0x1E, 0x01, 0xC4};
-uint8_t broadcastAddress6[] = {0x24, 0x6F, 0x28, 0xA4, 0x49, 0xB8};
-uint8_t broadcastAddress7[] = {0x24, 0x6F, 0x28, 0x5F, 0x12, 0x14};
-uint8_t broadcastAddress8[] = {0x24, 0x6F, 0x28, 0xA2, 0xDE, 0x64};
+uint8_t broadcastAddress1[] = {0x4C, 0x11, 0xAE, 0x77, 0xA2, 0x74};
+uint8_t broadcastAddress2[] = {0x24, 0x6F, 0x28, 0xA4, 0x49, 0xB8};
+uint8_t broadcastAddress3[] = {0x24, 0x6F, 0x28, 0x5F, 0x12, 0x14};
+uint8_t broadcastAddress4[] = {0x24, 0x6F, 0x28, 0x5F, 0x12, 0x28};
+uint8_t broadcastAddress5[] = {0x24, 0x6F, 0x28, 0xA6, 0x8B, 0x94};
+uint8_t broadcastAddress6[] = {0x4C, 0x11, 0xAE, 0x76, 0x8B, 0xAC};
+uint8_t broadcastAddress7[] = {0x24, 0x6F, 0x28, 0xA2, 0xDE, 0x64};
+uint8_t broadcastAddress8[] = {0x24, 0x6F, 0x28, 0x1E, 0x01, 0xC4};
 esp_err_t result;
 
 typedef struct test_struct {
@@ -175,7 +175,7 @@ void setup() {
 void loop() {
   test.y = random(0,20);
 
-  delay(2000);
+  delay(100);
   while (Serial.available() > 0) { // if any data available
     char incomingByte = Serial.read(); // read byte0
     if (incomingByte == 49) { // Feather 1
@@ -194,21 +194,123 @@ void loop() {
       sendFeather7();
     } else if (incomingByte == 56) { // Feather 8
       sendFeather8();
-    } else { // Intensity of vibration -- 6 levels of intensity
-        if (incomingByte == 65) { // A 
-          test.intensity = 42;
-        } else if (incomingByte == 66) { // B
-          test.intensity = 84;
-        } else if (incomingByte == 67) { // C
-          test.intensity = 126;
-        } else if (incomingByte == 68) { // D
-          test.intensity = 168;
-        } else if (incomingByte == 69) { // E
-          test.intensity = 210;
-        } else if (incomingByte == 70) { // F
-          test.intensity = 255;
-        } else if (incomingByte == 48) { // 0
-          test.intensity = 0;
+    } else { // Intensity of vibration -- 5 levels of offset
+        if (incomingByte == 35) { // #
+          test.intensity = test.intensity;
+        } else if (incomingByte == 36) { // $
+          test.intensity = test.intensity + 52;
+        } else if (incomingByte == 37) { // %
+          test.intensity = test.intensity + 104;
+        } else if (incomingByte == 38) { // &
+          test.intensity = test.intensity + 156;
+        } else if (incomingByte == 39) { // '
+          test.intensity = test.intensity + 208;
+        } else { // Intensity of vibration -- 52 levels
+            if (incomingByte == 65) { // A 
+              test.intensity = 0;
+            } else if (incomingByte == 66) { // B
+              test.intensity = 1;
+            } else if (incomingByte == 67) { // C
+              test.intensity = 2;
+            } else if (incomingByte == 68) { // D
+              test.intensity = 3;
+            } else if (incomingByte == 69) { // E
+              test.intensity = 4;
+            } else if (incomingByte == 70) { // F
+              test.intensity = 5;
+            } else if (incomingByte == 71) { // G
+              test.intensity = 6;
+            } else if (incomingByte == 72) { // H
+              test.intensity = 7;
+            } else if (incomingByte == 73) { // I
+              test.intensity = 8;
+            } else if (incomingByte == 74) { // J
+              test.intensity = 9;
+            } else if (incomingByte == 75) { // K
+              test.intensity = 10;
+            } else if (incomingByte == 76) { // L
+              test.intensity = 11;
+            } else if (incomingByte == 77) { // M 
+              test.intensity = 12;
+            } else if (incomingByte == 78) { // N
+              test.intensity = 13;
+            } else if (incomingByte == 79) { // O
+              test.intensity = 14;
+            } else if (incomingByte == 80) { // P
+              test.intensity = 15;
+            } else if (incomingByte == 81) { // Q 
+              test.intensity = 16;
+            } else if (incomingByte == 82) { // R
+              test.intensity = 17;
+            } else if (incomingByte == 83) { // S
+              test.intensity = 18;
+            } else if (incomingByte == 84) { // T
+              test.intensity = 19;
+            } else if (incomingByte == 85) { // U
+              test.intensity = 20;
+            } else if (incomingByte == 86) { // V
+              test.intensity = 21;
+            } else if (incomingByte == 87) { // W 
+              test.intensity = 22;
+            } else if (incomingByte == 88) { // X
+              test.intensity = 23;
+            } else if (incomingByte == 89) { // Y
+              test.intensity = 24;
+            } else if (incomingByte == 90) { // Z
+              test.intensity = 25;
+            } else if (incomingByte == 97) { // a
+              test.intensity = 26;
+            } else if (incomingByte == 98) { // b
+              test.intensity = 27;
+            } else if (incomingByte == 99) { // c
+              test.intensity = 28;
+            } else if (incomingByte == 100) { // d
+              test.intensity = 29;
+            } else if (incomingByte == 101) { // e 
+              test.intensity = 30;
+            } else if (incomingByte == 102) { // f
+              test.intensity = 31;
+            } else if (incomingByte == 103) { // g
+              test.intensity = 32;
+            } else if (incomingByte == 104) { // h
+              test.intensity = 33;
+            } else if (incomingByte == 105) { // i
+              test.intensity = 34;
+            } else if (incomingByte == 106) { // j
+              test.intensity = 35;
+            } else if (incomingByte == 107) { // k
+              test.intensity = 36;
+            } else if (incomingByte == 108) { // l
+              test.intensity = 37;
+            } else if (incomingByte == 109) { // m
+              test.intensity = 38;
+            } else if (incomingByte == 110) { // n
+              test.intensity = 39;
+            } else if (incomingByte == 111) { // o 
+              test.intensity = 40;
+            } else if (incomingByte == 112) { // p
+              test.intensity = 41;
+            } else if (incomingByte == 113) { // q
+              test.intensity = 42;
+            } else if (incomingByte == 114) { // r
+              test.intensity = 43;
+            } else if (incomingByte == 115) { // s
+              test.intensity = 44;
+            } else if (incomingByte == 116) { // t
+              test.intensity = 45;
+            } else if (incomingByte == 117) { // u
+              test.intensity = 46;
+            } else if (incomingByte == 118) { // v
+              test.intensity = 47;
+            } else if (incomingByte == 119) { // w
+              test.intensity = 48;
+            } else if (incomingByte == 120) { // x
+              test.intensity = 49;
+            } else if (incomingByte == 121) { // y 
+              test.intensity = 50;
+            } else if (incomingByte == 122) { // z
+              test.intensity = 51;
+            }
         }
     }
     //Serial.write(incomingByte); // send it back
