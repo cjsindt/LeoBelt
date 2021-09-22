@@ -46,7 +46,7 @@ endif()
     target_link_libraries(rs-align-advanced GLU)
   
    
-    include_directories(rs-align-advanced common third-party/imgui)
+    include_directories(rs-align-advanced common third-party/imgui SFML/include/SFML)
     set_target_properties (rs-align-advanced PROPERTIES FOLDER Examples)
     #install(TARGETS rs-align-advanced RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}\bin)
 

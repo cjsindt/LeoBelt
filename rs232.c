@@ -32,7 +32,7 @@
 
 
 #include "rs232.h"
-
+#include <stdio.h>
 
 #if defined(__linux__) || defined(__FreeBSD__)   /* Linux & FreeBSD */
 
@@ -778,7 +778,10 @@ void RS232_flushRXTX(int comport_number)
 
 void RS232_cputs(int comport_number, const char *text)  /* sends a string to serial port */
 {
-  while(*text != 0)   RS232_SendByte(comport_number, *(text++));
+  while(*text != 0) {
+    //printf("string: %d \n", *text);
+    RS232_SendByte(comport_number, *(text++));
+  }
 }
 
 

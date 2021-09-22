@@ -28,11 +28,14 @@ find_package(glut)
 find_package(GL)
 find_package(GLU)
 
+find_package(SFML 2 COMPONENTS graphics audio REQUIRED)
+
 if(NOT REALSENSE2_FOUND)
     SET(REALSENSE2_FOUND "realsense2")
     message(WARN "Failed to find_library(realsense2)")
 endif()
 
+    configure_file(white-square.png white-square.png COPYONLY)
 
     add_executable(leo-belt leo-belt.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp rs232.c)
     set_property(TARGET leo-belt PROPERTY CXX_STANDARD 11)
@@ -44,9 +47,15 @@ endif()
     target_link_libraries(leo-belt glut)
     target_link_libraries(leo-belt GL)
     target_link_libraries(leo-belt GLU)
+    target_link_libraries(leo-belt sfml-graphics)
   
    
     include_directories(leo-belt common third-party/imgui)
+    #if(SFML_FOUND)
+    #   include_directories(${SFML_INCLUDE_DIR})
+    #   target_link_libraries(leo-belt ${SFML_LIBRARIES})
+    #   target_link_libraries(leo-belt ${SFML_DEPENDENCIES})
+    #endif()
     set_target_properties (leo-belt PROPERTIES FOLDER Examples)
     #install(TARGETS leo-belt RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}\bin)
 
