@@ -25,6 +25,19 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
+// Client side implementation of UDP client-server model
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+  
+#define PORT     8080
+#define MAXLINE 1024
+
 #define BUF_SIZE 123
 char str_send[2048][BUF_SIZE]; // send data buffer
 int cport_nr = 16;
@@ -626,20 +639,11 @@ int main(int argc, char * argv[]) try
         }
     
         //Get processed aligned frame
-        //Very slow process -- 900+ iterations/min with code before line, 300 iter/min including this line
-        //Removal of line results in faster, sporadically inaccurate distance measurements
         //auto processed = align.process(frameset);
     
         // Trying to get both other and aligned depth frames
         rs2::video_frame other_frame = frameset.first(align_to);
         rs2::depth_frame aligned_depth_frame = frameset.get_depth_frame();
-        
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-            stbi_write_png("color_frameset.png", other_frame.get_width(), other_frame.get_height(),
-                other_frame.get_bytes_per_pixel(), other_frame.get_data(), other_frame.get_stride_in_bytes());
-            stbi_write_png("depth_frameset.png", aligned_depth_frame.get_width(), aligned_depth_frame.get_height(),
-                aligned_depth_frame.get_bytes_per_pixel(), aligned_depth_frame.get_data(), aligned_depth_frame.get_stride_in_bytes());
-        }
     
         //If one of them is unavailable, continue iteration
         if (!aligned_depth_frame || !other_frame)
@@ -655,6 +659,35 @@ int main(int argc, char * argv[]) try
         sf::Vector2u size = app.getSize();
         float width = size.x;
         float height = size.y;
+        
+        int sock = 0, valread;
+        struct sockaddr_in serv_addr;
+        char *hello = "Hello from client";
+        char buffer[1024] = {0};
+        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        {
+            printf("\n Socket creation error \n");
+            return -1;
+        }
+   
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_port = htons(PORT);
+       
+        // Convert IPv4 and IPv6 addresses from text to binary form
+        if(inet_pton(AF_INET, "192.168.137.210", &serv_addr.sin_addr)<=0) 
+        {
+            printf("\nInvalid address/ Address not supported \n");
+            return -1;
+        }
+   
+        if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+        {
+            printf("\nConnection Failed \n");
+            return -1;
+        }
+        send(sock , hello , strlen(hello) , 0 );
+        printf("Hello message sent");
+        std::cout << getFrame << std::endl;
         
         /*if (getFrame%10==0) {
             // Convert frame to png and upload png to texture
