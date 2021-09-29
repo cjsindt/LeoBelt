@@ -44,6 +44,8 @@ endif()
     target_link_libraries(leo-belt ${REALSENSE2_FOUND})
     target_link_libraries(server ${REALSENSE2_FOUND})
     target_link_libraries(leo-belt ${REALSENSE2GL_FOUND})
+    target_link_libraries(server ${REALSENSE2_FOUND})
+    target_link_libraries(server ${REALSENSE2GL_FOUND})
     target_link_libraries(leo-belt ${DEPENDENCIES})
     target_link_libraries(leo-belt glfw)
     target_link_libraries(leo-belt pthread)
@@ -75,6 +77,15 @@ install(
     CONFIGURATIONS Release
     RUNTIME DESTINATION
     ${CMAKE_INSTALL_PREFIX}/bin
+)
+
+install(
+        TARGETS
+
+        server
+
+        RUNTIME DESTINATION
+        ${CMAKE_INSTALL_PREFIX}/bin
 )
 
 

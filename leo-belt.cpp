@@ -685,7 +685,7 @@ int main(int argc, char * argv[]) try
         
         // Send info over socket
         frame = &other_frame;
-        sendto(sock , frame , (*frame).get_data_size() , MSG_DONTWAIT, (const struct sockaddr *) &serv_addr, sizeof(serv_addr) );
+        sendto(sock , frame , (*frame).get_data() , MSG_DONTWAIT, (const struct sockaddr *) &serv_addr, sizeof(serv_addr) );
         printf("Frame sent\n");
         recvfrom(sock, (char *) buffer, 1024, MSG_DONTWAIT, (struct sockaddr *) &serv_addr, reinterpret_cast<socklen_t*>(&len));
         std::cout << "Server: " << buffer << std::endl;
