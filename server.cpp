@@ -7,16 +7,17 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <iostream>
+#include "rs232.h"
+#include <librealsense2/rs.hpp>
 
 #define PORT     8080
-#define MAXLINE 1024
 #define IP "192.168.137.210"
 
 // Driver code
 int main() {
     int sockfd;
     int count = 0;
-    char buffer[MAXLINE];
+    rs2::video_frame * buffer;
     const char *hello = "Hello from server";
     struct sockaddr_in servaddr, cliaddr;
 
@@ -46,14 +47,13 @@ int main() {
         int len, n;
 
         len = sizeof(cliaddr);  //len is value/resuslt
-
-        recvfrom(sockfd, (char *)buffer, MAXLINE,
+        printf("Waiting...\n");
+        recvfrom(sockfd, buffer, 921600,
                  MSG_WAITALL, ( struct sockaddr *) &cliaddr,
                          reinterpret_cast<socklen_t *>(&len));
-        buffer[n] = '\0';
-        printf("Client : %s\n", buffer);
+        printf("Client : \n");
         sendto(sockfd, (const char *)hello, strlen(hello),
-               MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
+               MSG_DONTWAIT, (const struct sockaddr *) &cliaddr,
                        len);
         printf("Hello message sent.\n");
         std::cout << count++ << std::endl;
