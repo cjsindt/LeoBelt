@@ -4,6 +4,7 @@
 cmake_minimum_required(VERSION 3.1.0)
 
 project(leo-belt)
+project(server)
 
 # Save the command line compile commands in the build output
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -38,8 +39,10 @@ endif()
     configure_file(white-square.png white-square.png COPYONLY)
 
     add_executable(leo-belt leo-belt.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp rs232.c)
+    add_executable(server server.cpp)
     set_property(TARGET leo-belt PROPERTY CXX_STANDARD 11)
     target_link_libraries(leo-belt ${REALSENSE2_FOUND})
+    target_link_libraries(server ${REALSENSE2_FOUND})
     target_link_libraries(leo-belt ${REALSENSE2GL_FOUND})
     target_link_libraries(leo-belt ${DEPENDENCIES})
     target_link_libraries(leo-belt glfw)
@@ -51,18 +54,8 @@ endif()
   
    
     include_directories(leo-belt common third-party/imgui)
-    #if(SFML_FOUND)
-    #   include_directories(${SFML_INCLUDE_DIR})
-    #   target_link_libraries(leo-belt ${SFML_LIBRARIES})
-    #   target_link_libraries(leo-belt ${SFML_DEPENDENCIES})
-    #endif()
+
     set_target_properties (leo-belt PROPERTIES FOLDER Examples)
-    #install(TARGETS leo-belt RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}\bin)
-
-
-
-
-
 
 
 install(
@@ -70,6 +63,16 @@ install(
 
     leo-belt
 
+    CONFIGURATIONS Release
+    RUNTIME DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/bin
+)
+install(
+    TARGETS
+
+    server
+
+    CONFIGURATIONS Release
     RUNTIME DESTINATION
     ${CMAKE_INSTALL_PREFIX}/bin
 )

@@ -37,6 +37,7 @@
   
 #define PORT     8080
 #define MAXLINE 1024
+#define serverIP "192.168.137.210"
 
 #define BUF_SIZE 123
 char str_send[2048][BUF_SIZE]; // send data buffer
@@ -617,6 +618,28 @@ int main(int argc, char * argv[]) try
     sf::Sprite s1(t1), s2(t1), s3(t1), s4(t1), s5(t1), s6(t1), s7(t7), s8(t7);
 
     int getFrame = 0;
+    
+    // Client-side socket
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char buffer[1024];
+    rs2::video_frame *frame;
+    int *sockTest;
+    int sockint = 5;
+    sockTest = &sockint;
+    int len;
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+    
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_addr.s_addr = inet_addr(serverIP);
+
     while (app.isOpen()) // Application still alive?
     {        
         sf::Event e;
@@ -660,33 +683,12 @@ int main(int argc, char * argv[]) try
         float width = size.x;
         float height = size.y;
         
-        int sock = 0, valread;
-        struct sockaddr_in serv_addr;
-        char *hello = "Hello from client";
-        char buffer[1024] = {0};
-        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-        {
-            printf("\n Socket creation error \n");
-            return -1;
-        }
-   
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_port = htons(PORT);
-       
-        // Convert IPv4 and IPv6 addresses from text to binary form
-        if(inet_pton(AF_INET, "192.168.137.210", &serv_addr.sin_addr)<=0) 
-        {
-            printf("\nInvalid address/ Address not supported \n");
-            return -1;
-        }
-   
-        if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-        {
-            printf("\nConnection Failed \n");
-            return -1;
-        }
-        send(sock , hello , strlen(hello) , 0 );
-        printf("Hello message sent");
+        // Send info over socket
+        frame = &other_frame;
+        sendto(sock , frame , (*frame).get_data_size() , MSG_DONTWAIT, (const struct sockaddr *) &serv_addr, sizeof(serv_addr) );
+        printf("Frame sent\n");
+        recvfrom(sock, (char *) buffer, 1024, MSG_DONTWAIT, (struct sockaddr *) &serv_addr, reinterpret_cast<socklen_t*>(&len));
+        std::cout << "Server: " << buffer << std::endl;
         std::cout << getFrame << std::endl;
         
         /*if (getFrame%10==0) {
