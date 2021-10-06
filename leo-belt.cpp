@@ -12,9 +12,9 @@
 #include <fstream>
 #include <algorithm>
 #include <cstring>
+#include <string>
 #include <cmath>
-
-#include <iostream>
+#include <iomanip>
 #include <vector>
 #include <stdio.h>
 #include <unistd.h>
@@ -588,7 +588,8 @@ int main(int argc, char * argv[]) try
     // Create a pipeline to easily configure and start the camera
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 30);
-    cfg.enable_stream(RS2_STREAM_COLOR, -1, 640, 480, RS2_FORMAT_ANY, 30);
+    cfg.enable_stream(RS2_STREAM_COLOR, -1, 640, 480, RS2_FORMAT_RGBA8, 30);
+    //cfg.enable_record_to_file("output.bag");
     rs2::pipeline pipe;
     
     //Calling pipeline's start() without any additional parameters will start the first device
@@ -680,96 +681,28 @@ int main(int argc, char * argv[]) try
         
         // Taking dimensions of the window for rendering purposes
         sf::Vector2u size = app.getSize();
-        float width = size.x;
-        float height = size.y;
+        int width = size.x;
+        int height = size.y;
         
-        // Send info over socket
+        sf::Uint8* pixels = new sf::Uint8[width * height * 4];
+        pixels = const_cast<sf::Uint8*>(reinterpret_cast<const sf::Uint8*>(other_frame.get_data()));
+        printf("%x %x %x %x\n", 
+                    pixels[0], pixels[1], pixels[2], pixels[3]);
+
+        video.update(pixels);
+        sf::Sprite image(video);
+        app.clear();
+            app.draw(image);
+        app.display();
+        
+        /*// Send info over socket
         frame = &other_frame;
         sendto(sock , frame , (*frame).get_data() , MSG_DONTWAIT, (const struct sockaddr *) &serv_addr, sizeof(serv_addr) );
         printf("Frame sent\n");
         recvfrom(sock, (char *) buffer, 1024, MSG_DONTWAIT, (struct sockaddr *) &serv_addr, reinterpret_cast<socklen_t*>(&len));
         std::cout << "Server: " << buffer << std::endl;
-        std::cout << getFrame << std::endl;
+        std::cout << getFrame << std::endl;*/
         
-        /*if (getFrame%10==0) {
-            // Convert frame to png and upload png to texture
-            stbi_write_png("color.png", other_frame.get_width(), other_frame.get_height(),
-                other_frame.get_bytes_per_pixel(), other_frame.get_data(), other_frame.get_stride_in_bytes());
-            if (!video.loadFromFile("color.png")) {std::cout << "could not make video texture" << std::endl;}
-            sf::Sprite view(video);
-            
-            // Set colors for heat map quadrants
-            s1.setColor(sf::Color(*(c+0), 0, *(c+8), 120));
-            s2.setColor(sf::Color(*(c+1), 0, *(c+9), 120));
-            s3.setColor(sf::Color(*(c+2), 0, *(c+10), 120));
-            s4.setColor(sf::Color(*(c+3), 0, *(c+11), 120));
-            s5.setColor(sf::Color(*(c+4), 0, *(c+12), 120));
-            s6.setColor(sf::Color(*(c+5), 0, *(c+13), 120));
-            s7.setColor(sf::Color(*(c+6), 0, *(c+14), 120));
-            s8.setColor(sf::Color(*(c+7), 0, *(c+15), 120));
-        
-            // Creating the heat map
-            s1.setPosition(0,0);
-            s2.setPosition(width/3,0);
-            s3.setPosition(2*width/3,0);
-            s4.setPosition(0,height/3);
-            s5.setPosition(width/3,height/3);
-            s6.setPosition(2*width/3,height/3);
-            s7.setPosition(0,2*height/3);
-            s8.setPosition(width/2,2*height/3);
-        
-            app.clear();
-            
-                app.draw(view);
-                app.draw(s1);
-                app.draw(s2);
-                app.draw(s3);
-                app.draw(s4);
-                app.draw(s5);
-                app.draw(s6);
-                app.draw(s7);
-                app.draw(s8);
-            
-            app.display();
-        }
-        else {
-            if (!video.loadFromFile("color.png")) {std::cout << "could not make video texture" << std::endl;}
-            sf::Sprite view(video);
-            
-            // Set colors for heat map quadrants
-            s1.setColor(sf::Color(*(c+0), 0, *(c+8), 120));
-            s2.setColor(sf::Color(*(c+1), 0, *(c+9), 120));
-            s3.setColor(sf::Color(*(c+2), 0, *(c+10), 120));
-            s4.setColor(sf::Color(*(c+3), 0, *(c+11), 120));
-            s5.setColor(sf::Color(*(c+4), 0, *(c+12), 120));
-            s6.setColor(sf::Color(*(c+5), 0, *(c+13), 120));
-            s7.setColor(sf::Color(*(c+6), 0, *(c+14), 120));
-            s8.setColor(sf::Color(*(c+7), 0, *(c+15), 120));
-        
-            // Creating the heat map
-            s1.setPosition(0,0);
-            s2.setPosition(width/3,0);
-            s3.setPosition(2*width/3,0);
-            s4.setPosition(0,height/3);
-            s5.setPosition(width/3,height/3);
-            s6.setPosition(2*width/3,height/3);
-            s7.setPosition(0,2*height/3);
-            s8.setPosition(width/2,2*height/3);
-        
-            app.clear();
-            
-                app.draw(view);
-                app.draw(s1);
-                app.draw(s2);
-                app.draw(s3);
-                app.draw(s4);
-                app.draw(s5);
-                app.draw(s6);
-                app.draw(s7);
-                app.draw(s8);
-            
-            app.display();
-        }*/
         getFrame++;
     }
     std::cout << getFrame << std::endl;
