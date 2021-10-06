@@ -691,37 +691,37 @@ int main(int argc, char * argv[]) try
         sf::Uint8* pixels = new sf::Uint8[width * height * 4];
         pixels = const_cast<sf::Uint8*>(reinterpret_cast<const sf::Uint8*>(other_frame.get_data()));
         // Set colors for heat map quadrants
-            s1.setColor(sf::Color(*(c+0), 0, *(c+8), 120));
-            s2.setColor(sf::Color(*(c+1), 0, *(c+9), 120));
-            s3.setColor(sf::Color(*(c+2), 0, *(c+10), 120));
-            s4.setColor(sf::Color(*(c+3), 0, *(c+11), 120));
-            s5.setColor(sf::Color(*(c+4), 0, *(c+12), 120));
-            s6.setColor(sf::Color(*(c+5), 0, *(c+13), 120));
-            s7.setColor(sf::Color(*(c+6), 0, *(c+14), 120));
-            s8.setColor(sf::Color(*(c+7), 0, *(c+15), 120));
+        s1.setColor(sf::Color(*(c+0), 0, *(c+8), 120));
+        s2.setColor(sf::Color(*(c+1), 0, *(c+9), 120));
+        s3.setColor(sf::Color(*(c+2), 0, *(c+10), 120));
+        s4.setColor(sf::Color(*(c+3), 0, *(c+11), 120));
+        s5.setColor(sf::Color(*(c+4), 0, *(c+12), 120));
+        s6.setColor(sf::Color(*(c+5), 0, *(c+13), 120));
+        s7.setColor(sf::Color(*(c+6), 0, *(c+14), 120));
+        s8.setColor(sf::Color(*(c+7), 0, *(c+15), 120));
         
-            // Creating the heat map
-            s1.setPosition(0,0);
-            s2.setPosition(width/3,0);
-            s3.setPosition(2*width/3,0);
-            s4.setPosition(0,height/3);
-            s5.setPosition(width/3,height/3);
-            s6.setPosition(2*width/3,height/3);
-            s7.setPosition(0,2*height/3);
-            s8.setPosition(width/2,2*height/3);
+        // Creating the heat map
+        s1.setPosition(0,0);
+        s2.setPosition(width/3,0);
+        s3.setPosition(2*width/3,0);
+        s4.setPosition(0,height/3);
+        s5.setPosition(width/3,height/3);
+        s6.setPosition(2*width/3,height/3);
+        s7.setPosition(0,2*height/3);
+        s8.setPosition(width/2,2*height/3);
 
         video.update(pixels);
         sf::Sprite image(video);
         app.clear();
             app.draw(image);
             app.draw(s1);
-                app.draw(s2);
-                app.draw(s3);
-                app.draw(s4);
-                app.draw(s5);
-                app.draw(s6);
-                app.draw(s7);
-                app.draw(s8);
+            app.draw(s2);
+            app.draw(s3);
+            app.draw(s4);
+            app.draw(s5);
+            app.draw(s6);
+            app.draw(s7);
+            app.draw(s8);
         app.display();
         
         /*// Send info over socket
