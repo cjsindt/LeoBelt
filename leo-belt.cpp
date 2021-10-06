@@ -14,6 +14,7 @@
 #include <cstring>
 #include <string>
 #include <cmath>
+#include <time.h>
 #include <iomanip>
 #include <vector>
 #include <stdio.h>
@@ -613,6 +614,7 @@ int main(int argc, char * argv[]) try
     // Create objects for heatmap
     sf::Texture t1, t7;
     sf::Texture video;
+    video.create(640,480);
     if (!t1.loadFromFile("white-square.png", sf::IntRect(0,0,214,160))) {std::cout << "could not make texture t1" << std::endl;}
     if (!t7.loadFromFile("white-square.png", sf::IntRect(0,0,320,160))) {std::cout << "could not make texture t7" << std::endl;}
     
@@ -640,6 +642,8 @@ int main(int argc, char * argv[]) try
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = inet_addr(serverIP);
+    
+    srand(time(NULL));
 
     while (app.isOpen()) // Application still alive?
     {        
@@ -683,16 +687,41 @@ int main(int argc, char * argv[]) try
         sf::Vector2u size = app.getSize();
         int width = size.x;
         int height = size.y;
-        
+
         sf::Uint8* pixels = new sf::Uint8[width * height * 4];
         pixels = const_cast<sf::Uint8*>(reinterpret_cast<const sf::Uint8*>(other_frame.get_data()));
-        printf("%x %x %x %x\n", 
-                    pixels[0], pixels[1], pixels[2], pixels[3]);
+        // Set colors for heat map quadrants
+            s1.setColor(sf::Color(*(c+0), 0, *(c+8), 120));
+            s2.setColor(sf::Color(*(c+1), 0, *(c+9), 120));
+            s3.setColor(sf::Color(*(c+2), 0, *(c+10), 120));
+            s4.setColor(sf::Color(*(c+3), 0, *(c+11), 120));
+            s5.setColor(sf::Color(*(c+4), 0, *(c+12), 120));
+            s6.setColor(sf::Color(*(c+5), 0, *(c+13), 120));
+            s7.setColor(sf::Color(*(c+6), 0, *(c+14), 120));
+            s8.setColor(sf::Color(*(c+7), 0, *(c+15), 120));
+        
+            // Creating the heat map
+            s1.setPosition(0,0);
+            s2.setPosition(width/3,0);
+            s3.setPosition(2*width/3,0);
+            s4.setPosition(0,height/3);
+            s5.setPosition(width/3,height/3);
+            s6.setPosition(2*width/3,height/3);
+            s7.setPosition(0,2*height/3);
+            s8.setPosition(width/2,2*height/3);
 
         video.update(pixels);
         sf::Sprite image(video);
         app.clear();
             app.draw(image);
+            app.draw(s1);
+                app.draw(s2);
+                app.draw(s3);
+                app.draw(s4);
+                app.draw(s5);
+                app.draw(s6);
+                app.draw(s7);
+                app.draw(s8);
         app.display();
         
         /*// Send info over socket

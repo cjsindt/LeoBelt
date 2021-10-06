@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.1.0)
 
 project(leo-belt)
 project(server)
-project(playback)
-project(exeCall)
+#project(playback)
+#project(exeCall)
 
 # Save the command line compile commands in the build output
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -42,33 +42,33 @@ endif()
 
     add_executable(leo-belt leo-belt.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp rs232.c)
     add_executable(server server.cpp)
-    add_executable(playback playback.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp)
-    add_executable(exeCall exeCall.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp)
+    #add_executable(playback playback.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp)
+    #add_executable(exeCall exeCall.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp)
     set_property(TARGET leo-belt PROPERTY CXX_STANDARD 11)
     target_link_libraries(leo-belt ${REALSENSE2_FOUND})
     target_link_libraries(server ${REALSENSE2_FOUND})
-    target_link_libraries(playback ${REALSENSE2_FOUND})
-    target_link_libraries(exeCall ${REALSENSE2_FOUND})
+    #target_link_libraries(playback ${REALSENSE2_FOUND})
+    #target_link_libraries(exeCall ${REALSENSE2_FOUND})
     target_link_libraries(leo-belt ${REALSENSE2GL_FOUND})
     target_link_libraries(server ${REALSENSE2GL_FOUND})
-    target_link_libraries(playback ${REALSENSE2GL_FOUND})
-    target_link_libraries(exeCall ${REALSENSE2GL_FOUND})
+    #target_link_libraries(playback ${REALSENSE2GL_FOUND})
+    #target_link_libraries(exeCall ${REALSENSE2GL_FOUND})
     target_link_libraries(leo-belt ${DEPENDENCIES})
     target_link_libraries(leo-belt glfw)
-    target_link_libraries(playback glfw)
-    target_link_libraries(exeCall glfw)
+    #target_link_libraries(playback glfw)
+    #target_link_libraries(exeCall glfw)
     target_link_libraries(leo-belt pthread)
-    target_link_libraries(playback pthread)
-    target_link_libraries(exeCall pthread)
+    #target_link_libraries(playback pthread)
+    #target_link_libraries(exeCall pthread)
     target_link_libraries(leo-belt glut)
-    target_link_libraries(playback glut)
-    target_link_libraries(exeCall glut)
+    #target_link_libraries(playback glut)
+    #target_link_libraries(exeCall glut)
     target_link_libraries(leo-belt GL)
-    target_link_libraries(playback GL)
-    target_link_libraries(exeCall GL)
+    #target_link_libraries(playback GL)
+    #target_link_libraries(exeCall GL)
     target_link_libraries(leo-belt GLU)
-    target_link_libraries(playback GLU)
-    target_link_libraries(exeCall GLU)
+    #target_link_libraries(playback GLU)
+    #target_link_libraries(exeCall GLU)
     target_link_libraries(leo-belt sfml-graphics)
   
    
@@ -95,24 +95,24 @@ install(
     RUNTIME DESTINATION
     ${CMAKE_INSTALL_PREFIX}/bin
 )
-install(
-    TARGETS
-
-    playback
-
-    CONFIGURATIONS Release
-    RUNTIME DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/bin
-)
-install(
-    TARGETS
-
-    exeCall
-
-    CONFIGURATIONS Release
-    RUNTIME DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/bin
-)
+#install(
+#   TARGETS
+#
+#   playback
+#
+#   CONFIGURATIONS Release
+#   RUNTIME DESTINATION
+#   ${CMAKE_INSTALL_PREFIX}/bin
+#)
+#install(
+#    TARGETS
+#
+#    exeCall
+#
+#    CONFIGURATIONS Release
+#    RUNTIME DESTINATION
+#    ${CMAKE_INSTALL_PREFIX}/bin
+#)
 
 
 
