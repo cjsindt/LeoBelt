@@ -86,7 +86,7 @@ int main(int argc, char * argv[]) try
     
     if(RS232_OpenComport(cport_nr, bdrate, mode)) {
         printf("Can not open comport\n");
-        return(0);
+        //return(0);
     }
     
     usleep(2000000); // Waits 2s for stable condition
@@ -156,6 +156,11 @@ int main(int argc, char * argv[]) try
     
     srand(time(NULL));
 
+    sf::Vector2u size = app.getSize();
+    int width = size.x;
+    int height = size.y;
+    sf::Uint8* pixels = new sf::Uint8[width * height * 4];
+
     while (app.isOpen()) // Application still alive?
     {        
         sf::Event e;
@@ -195,11 +200,7 @@ int main(int argc, char * argv[]) try
         c = printPixelDepth(other_frame, aligned_depth_frame, depth_scale);
         
         // Taking dimensions of the window for rendering purposes
-        sf::Vector2u size = app.getSize();
-        int width = size.x;
-        int height = size.y;
 
-        sf::Uint8* pixels = new sf::Uint8[width * height * 4];
         pixels = const_cast<sf::Uint8*>(reinterpret_cast<const sf::Uint8*>(other_frame.get_data()));
         // Set colors for heat map quadrants
         s1.setColor(sf::Color(*(c+0), 0, *(c+8), 120));
