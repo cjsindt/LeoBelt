@@ -22,10 +22,6 @@
 #include <stdint.h>
 #include "rs232.h"
 
-// 3rd party header for writing png files
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-//#include "stb/stb_image_write.h"
-
 // Client side implementation of UDP client-server model
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,9 +86,6 @@ int main(int argc, char * argv[]) try
     }
     
     usleep(2000000); // Waits 2s for stable condition
-    testButton();
-    usleep(3000000); // Allow feathers to buzz for 3s (testing functionality)
-    silenceAllFeathers();
 
     // Create Window
     sf::RenderWindow app(sf::VideoMode(640, 480), "LEO Belt"); // Simple window handling
@@ -101,7 +94,6 @@ int main(int argc, char * argv[]) try
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 30);
     cfg.enable_stream(RS2_STREAM_COLOR, -1, 640, 480, RS2_FORMAT_RGBA8, 30);
-    //cfg.enable_record_to_file("output.bag");
     rs2::pipeline pipe;
     
     //Calling pipeline's start() without any additional parameters will start the first device
@@ -123,16 +115,21 @@ int main(int argc, char * argv[]) try
     rs2::align align(align_to);
     
     // Create objects for heatmap
+    sf::Vector2u size = app.getSize();
+    int width = size.x;
+    int height = size.y;
+    sf::Uint8* pixels = new sf::Uint8[width * height * 4];
     sf::Texture t1, t7;
     sf::Texture video;
     video.create(640,480);
-    if (!t1.loadFromFile("white-square.png", sf::IntRect(0,0,214,160))) {std::cout << "could not make texture t1" << std::endl;}
-    if (!t7.loadFromFile("white-square.png", sf::IntRect(0,0,320,160))) {std::cout << "could not make texture t7" << std::endl;}
+    t1.loadFromFile("white-square.png", sf::IntRect(0,0,width/3,height/3));
+    t7.loadFromFile("white-square.png", sf::IntRect(0,0,width/2,height/3));
     
     sf::Sprite s1(t1), s2(t1), s3(t1), s4(t1), s5(t1), s6(t1), s7(t7), s8(t7);
 
     int getFrame = 0;
     
+    /*
     // Client-side socket
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
@@ -152,14 +149,14 @@ int main(int argc, char * argv[]) try
     
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-    serv_addr.sin_addr.s_addr = inet_addr(serverIP);
+    serv_addr.sin_addr.s_addr = inet_addr(serverIP);*/
     
-    srand(time(NULL));
-
-    sf::Vector2u size = app.getSize();
-    int width = size.x;
-    int height = size.y;
-    sf::Uint8* pixels = new sf::Uint8[width * height * 4];
+    // Rapid buzz to indicate device is on
+    for (int i=0; i<4; i++) {
+        testButton();
+        usleep(500000);
+    }
+    silenceAllFeathers();
 
     while (app.isOpen()) // Application still alive?
     {        
