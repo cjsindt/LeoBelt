@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "rs232.h"
+#include <chrono>
 
 // Client side implementation of UDP client-server model
 #include <stdio.h>
@@ -89,15 +90,14 @@ int main(int argc, char * argv[]) try
 
     // Create Window
     sf::RenderWindow app(sf::VideoMode(640, 480), "LEO Belt"); // Simple window handling
-
+    app.setVerticalSyncEnabled(false);
+    
     // Create a pipeline to easily configure and start the camera
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 30);
     cfg.enable_stream(RS2_STREAM_COLOR, -1, 640, 480, RS2_FORMAT_RGBA8, 30);
     rs2::pipeline pipe;
     
-    //Calling pipeline's start() without any additional parameters will start the first device
-    // with its default streams.
     //The start function returns the pipeline profile which the pipeline used to start the device
     rs2::pipeline_profile profile = pipe.start(cfg);
 
@@ -128,7 +128,7 @@ int main(int argc, char * argv[]) try
     sf::Sprite s1(t1), s2(t1), s3(t1), s4(t1), s5(t1), s6(t1), s7(t7), s8(t7);
 
     int getFrame = 0;
-    
+    int* c;
     /*
     // Client-side socket
     int sock = 0, valread;
@@ -151,12 +151,15 @@ int main(int argc, char * argv[]) try
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = inet_addr(serverIP);*/
     
-    // Rapid buzz to indicate device is on
-    for (int i=0; i<4; i++) {
-        testButton();
+    // Rapid buzz to indicate device is on and all feathers are functioning
+    for (int i=1; i<=8; i++) {
+        RS232_cputs(cport_nr, str_send[256*i-1]);
         usleep(500000);
+        RS232_cputs(cport_nr,str_send[256*(i-1)]);
+        usleep(200000);
     }
-    silenceAllFeathers();
+    
+    auto start = std::chrono::high_resolution_clock::now();
 
     while (app.isOpen()) // Application still alive?
     {        
@@ -167,8 +170,14 @@ int main(int argc, char * argv[]) try
             }
         }
         
-        // Using the align object, we block the application until a frameset is available
-        rs2::frameset frameset = pipe.wait_for_frames();
+        rs2::frameset frameset;
+        try {
+            // Using the align object, we block the application until a frameset is available
+            frameset = pipe.wait_for_frames();
+        }
+        catch (const std::exception& e) {
+            std::cout << e.what();
+        }
 
         if (profile_changed(pipe.get_active_profile().get_streams(), profile.get_streams()))
         {
@@ -179,9 +188,6 @@ int main(int argc, char * argv[]) try
             depth_scale = get_depth_scale(profile.get_device());
         }
     
-        //Get processed aligned frame
-        //auto processed = align.process(frameset);
-    
         // Trying to get both other and aligned depth frames
         rs2::video_frame other_frame = frameset.first(align_to);
         rs2::depth_frame aligned_depth_frame = frameset.get_depth_frame();
@@ -191,12 +197,10 @@ int main(int argc, char * argv[]) try
         {
             continue;
         }
+        
       
         // Obtaining pixel depth and heat map specifications
-        int* c;
         c = printPixelDepth(other_frame, aligned_depth_frame, depth_scale);
-        
-        // Taking dimensions of the window for rendering purposes
 
         pixels = const_cast<sf::Uint8*>(reinterpret_cast<const sf::Uint8*>(other_frame.get_data()));
         // Set colors for heat map quadrants
@@ -221,6 +225,7 @@ int main(int argc, char * argv[]) try
 
         video.update(pixels);
         sf::Sprite image(video);
+        
         app.clear();
             app.draw(image);
             app.draw(s1);
@@ -243,6 +248,10 @@ int main(int argc, char * argv[]) try
         
         getFrame++;
     }
+    usleep(1000000);
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop-start);
+    std::cout << duration.count() << std::endl;
     std::cout << getFrame << std::endl;
     silenceAllFeathers();
     return EXIT_SUCCESS;
