@@ -313,6 +313,21 @@ void loop() {
             }
         }
     }
+
+    if (Serial.available() == 0) {
+      delay(1000);
+      if (Serial.available() == 0) {
+        test.intensity = 0;
+        sendFeather1();
+        sendFeather2();
+        sendFeather3();
+        sendFeather4();
+        sendFeather5();
+        sendFeather6();
+        sendFeather7();
+        sendFeather8();
+      }
+    }
     //Serial.write(incomingByte); // send it back
   }
 }
