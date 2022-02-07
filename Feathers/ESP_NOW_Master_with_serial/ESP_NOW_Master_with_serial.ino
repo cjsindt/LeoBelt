@@ -111,7 +111,7 @@ void setup() {
   esp_now_register_send_cb(OnDataSent);
    
   // register peer
-  esp_now_peer_info_t peerInfo;
+  esp_now_peer_info_t peerInfo = {};
   peerInfo.channel = 0;  
   peerInfo.encrypt = false;
   
