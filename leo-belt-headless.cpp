@@ -22,14 +22,17 @@
 #include <stdint.h>
 #include "rs232.h"
 #include <chrono>
+#include <math.h>
   
 #define PORT     8080
 #define MAXLINE 1024
 #define serverIP "192.168.137.210"
+#define PI 3.14159265
 
 #define BUF_SIZE 123
 char str_send[2048][BUF_SIZE]; // send data buffer
 int cport_nr = 16;
+double* mags;
 
 float get_depth_scale(rs2::device dev);
 rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams);
@@ -37,6 +40,7 @@ bool profile_changed(const std::vector<rs2::stream_profile>& current, const std:
 int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale);
 void silenceAllFeathers();
 void testButton();
+double* findMags(double y_angle, double z_angle, auto pixel_dist);
 
 int main(int argc, char * argv[]) try
 {
@@ -201,18 +205,51 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
     int x_left = 96.97;
     int x_right = 135.76;
     int y_offset = 78.37;
+    double y_angle = 87;
+    double z_angle = 58;
+    double x_mag, y_mag, z_mag;
 
 #pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
     for (int y = 0; y < height; y++)
     {
         auto depth_pixel_index = y * width;
+        if (y!=0) {
+            z_angle -= 58 / 240;
+            z_angle = abs(z_angle);
+        }
+
         for (int x = 0; x < width; x++, ++depth_pixel_index)
         {
             // Get the depth value of the current pixel
             auto pixels_distance = depth_scale * p_depth_frame[depth_pixel_index];
-            
-            auto offset = depth_pixel_index*other_bpp;
-            
+
+            if (x==0) {
+                y_angle = 58;
+            }
+            else {
+                y_angle -= 87 / 320;
+                y_angle = abs(y_angle);
+            }
+
+            mags = findMags(y_angle, z_angle, pixels_distance);
+
+            x_mag = *(mags+0);
+            y_mag = *(mags+1);
+            z_mag = *(mags+2);
+
+            if (y_mag > 1.0/2 && z_mag > 1.7/2) {
+                pixels_distance = sqrt(x_mag^2 + (y_mag-1.0/2)^2 + (z_mag-1.7/2)^2);
+            }
+            else if (y_mag > 1.0/2) {
+                pixels_distance = sqrt(x_mag^2 + (y_mag-1.0/2)^2);
+            }
+            else if (z_mag > 1.7/2) {
+                pixels_distance = sqrt(x_mag^2 + (z_mag-1.7/2)^2);
+            }
+            else {
+                pixels_distance = x_mag;
+            }
+
             if ((x>x_left) && (y>y_offset) && (x<(width-x_left-x_right)/3+x_left) && (y<(height-2*y_offset)/3+y_offset)) { // Top-left quadrant -- Feather 1
                 if (pixels_distance < closest[0] && pixels_distance > .001){
                     closest[0] = pixels_distance;
@@ -366,6 +403,18 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 	}    
     
     return color;
+}
+
+double* findMags(double y_angle, double z_angle, auto pixel_dist) {
+    double x, y, z;
+
+    y = sqrt(pixel_dist / (tan(y_angle*PI/180.0)^2 + 1 + tan(z_angle*PI/180.0)^2));
+    x = y*tan(y_angle*PI/180);
+    z = y*tan(z_angle*PI/180);
+
+    double a[3] = {x, y, z};
+
+    return a;
 }
 
 float get_depth_scale(rs2::device dev)
