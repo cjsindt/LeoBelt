@@ -79,14 +79,14 @@ int main(int argc, char * argv[]) try
     // Rapid buzz to indicate device is on and all feathers are functioning
     for (int i=1; i<=8; i++) {
         RS232_cputs(cport_nr, str_send[256*i-1]);
-        usleep(2000000); // 2s
+        sleep(.5); // .5s
         RS232_cputs(cport_nr,str_send[256*(i-1)]);
-        usleep(2000000); // 2s
+        sleep(.25); // .25s
     }
     
     // Create a pipeline to easily configure and start the camera
     rs2::config cfg;
-    cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 30);
+    cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 60);
     rs2::pipeline pipe;
     
     //The start function returns the pipeline profile which the pipeline used to start the device
@@ -110,11 +110,11 @@ int main(int argc, char * argv[]) try
     {
         try {
             // Using the align object, we block the application until a frameset is available
-            frameset = pipe.wait_for_frames();
+            frameset = pipe.wait_for_frames(34);
         }
         catch (const std::exception& e) {
             stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop-start);
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
             std::cout << "(catch block) frames: ";
             std::cout << getFrame;
             std::cout << " time: ";
@@ -146,19 +146,13 @@ int main(int argc, char * argv[]) try
         
         if (getFrame%1000 == 0) {
             stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop-start);
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
             std::cout << "frames: ";
             std::cout << getFrame;
             std::cout << " time: ";
             std::cout << duration.count() << std::endl;
         }
     }
-    stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop-start);
-    std::cout << "(final) frames: ";
-    std::cout << getFrame;
-    std::cout << " time: ";
-    std::cout << duration.count() << std::endl;
     
     usleep(1000000);
     silenceAllFeathers();
