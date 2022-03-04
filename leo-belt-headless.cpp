@@ -32,7 +32,7 @@
 #define BUF_SIZE 123
 char str_send[2048][BUF_SIZE]; // send data buffer
 int cport_nr = 16;
-double* mags;
+float* mags;
 
 float get_depth_scale(rs2::device dev);
 rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams);
@@ -40,7 +40,7 @@ bool profile_changed(const std::vector<rs2::stream_profile>& current, const std:
 int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale);
 void silenceAllFeathers();
 void testButton();
-double* findMags(double y_angle, double z_angle, auto pixel_dist);
+float* findMags(float y_angle, float z_angle, float pixel_dist);
 
 int main(int argc, char * argv[]) try
 {
@@ -199,9 +199,9 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
     int x_left = 96.97;
     int x_right = 135.76;
     int y_offset = 78.37;
-    double y_angle = 87;
-    double z_angle = 58;
-    double x_mag, y_mag, z_mag;
+    float y_angle = 87;
+    float z_angle = 58;
+    float x_mag, y_mag, z_mag;
 
 #pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
     for (int y = 0; y < height; y++)
@@ -216,7 +216,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
         {
             // Get the depth value of the current pixel
             auto pixels_distance = depth_scale * p_depth_frame[depth_pixel_index];
-
+           // pixels_distance = reinterpret_cast<double>(pixels_distance);
+            
             if (x==0) {
                 y_angle = 58;
             }
@@ -232,13 +233,13 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
             z_mag = *(mags+2);
 
             if (y_mag > 1.0/2 && z_mag > 1.7/2) {
-                pixels_distance = sqrt(x_mag^2 + (y_mag-1.0/2)^2 + (z_mag-1.7/2)^2);
+                pixels_distance = sqrt(pow(x_mag,2) + pow(y_mag-1.0/2,2) + pow(z_mag-1.7/2,2));
             }
             else if (y_mag > 1.0/2) {
-                pixels_distance = sqrt(x_mag^2 + (y_mag-1.0/2)^2);
+                pixels_distance = sqrt(pow(x_mag,2) + pow(y_mag-1.0/2,2));
             }
             else if (z_mag > 1.7/2) {
-                pixels_distance = sqrt(x_mag^2 + (z_mag-1.7/2)^2);
+                pixels_distance = sqrt(pow(x_mag,2) + pow(z_mag-1.7/2,2));
             }
             else {
                 pixels_distance = x_mag;
@@ -283,7 +284,7 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
     // converting physical distance to 0-255 scale
     for(int i=0; i<=7; i++) {
         //std::cout << "feather: " << i+1 << " distance: " << closest[i];
-        closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(2.0-.001));
+        closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(1.413-.001));
         closest[i] = trunc(closest[i]);
         //std::cout << " scaled: " << closest[i] << std::endl;
     }
@@ -399,14 +400,14 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
     return color;
 }
 
-double* findMags(double y_angle, double z_angle, auto pixel_dist) {
-    double x, y, z;
+float* findMags(float y_angle, float z_angle, float pixel_dist) {
+    float x, y, z;
 
-    y = sqrt(pixel_dist / (tan(y_angle*PI/180.0)^2 + 1 + tan(z_angle*PI/180.0)^2));
+    y = sqrt(pixel_dist / (pow(tan(y_angle*PI/180.0),2) + 1 + pow(tan(z_angle*PI/180.0),2)));
     x = y*tan(y_angle*PI/180);
     z = y*tan(z_angle*PI/180);
 
-    double a[3] = {x, y, z};
+    float a[3] = {x, y, z};
 
     return a;
 }
