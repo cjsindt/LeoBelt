@@ -407,7 +407,7 @@ float* findMags(float y_angle, float z_angle, float pixel_dist) {
     x = y*tan(y_angle*PI/180);
     z = y*tan(z_angle*PI/180);
 
-    float a[3] = {x, y, z};
+    static float a[3] = {x, y, z};
 
     return a;
 }
