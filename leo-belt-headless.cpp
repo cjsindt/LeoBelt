@@ -32,7 +32,6 @@
 #define BUF_SIZE 123
 char str_send[2048][BUF_SIZE]; // send data buffer
 int cport_nr = 16;
-float* mags;
 
 float get_depth_scale(rs2::device dev);
 rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams);
@@ -107,10 +106,10 @@ int main(int argc, char * argv[]) try
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     
-    std::ofstream out("/home/pi/leo_belt/error.txt");
-    std::cout.rdbuf(out.rdbuf());
+   // std::ofstream out("/home/pi/leo_belt/error.txt");
+    //std::cout.rdbuf(out.rdbuf());
 
-    while (true) // Application still alive?
+    while (getFrame < 10) // Application still alive?
     {
         try {
             // Using the align object, we block the application until a frameset is available
@@ -157,7 +156,9 @@ int main(int argc, char * argv[]) try
             std::cout << duration.count() << std::endl;
         }
     }
-    
+
+    std::cout << getFrame << std::endl;
+
     usleep(1000000);
     silenceAllFeathers();
     return EXIT_SUCCESS;
@@ -195,21 +196,18 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 
     float closest[8] = {10,10,10,10,10,10,10,10};
     static int color[16] = {};
-    
-    int x_left = 96.97;
-    int x_right = 135.76;
-    int y_offset = 78.37;
-    float y_angle = 87;
-    float z_angle = 58;
+
+    float y_angle = 37.5;
+    float z_angle = 29.0;
     float x_mag, y_mag, z_mag;
+    float* mags = {};
 
 #pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
     for (int y = 0; y < height; y++)
     {
         auto depth_pixel_index = y * width;
         if (y!=0) {
-            z_angle -= 58 / 240;
-            z_angle = abs(z_angle);
+            z_angle -= 29.0/240.0;
         }
 
         for (int x = 0; x < width; x++, ++depth_pixel_index)
@@ -219,11 +217,10 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
            // pixels_distance = reinterpret_cast<double>(pixels_distance);
             
             if (x==0) {
-                y_angle = 58;
+                y_angle = 37.5;
             }
             else {
-                y_angle -= 87 / 320;
-                y_angle = abs(y_angle);
+                y_angle -= 37.5/320.0;
             }
 
             mags = findMags(y_angle, z_angle, pixels_distance);
@@ -232,50 +229,74 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
             y_mag = *(mags+1);
             z_mag = *(mags+2);
 
-            if (y_mag > 1.0/2 && z_mag > 1.7/2) {
-                pixels_distance = sqrt(pow(x_mag,2) + pow(y_mag-1.0/2,2) + pow(z_mag-1.7/2,2));
+            /*if (x==0 && y==0) {
+                std::cout << "feathers 1,2,3" << std::endl;
             }
-            else if (y_mag > 1.0/2) {
-                pixels_distance = sqrt(pow(x_mag,2) + pow(y_mag-1.0/2,2));
+            else if (x==0 && y==height/3) {
+                std::cout << "feathers 4,5,6" << std::endl;
+            }
+            else if (x==0 && y==2*height/3) {
+                std::cout << "feathers 7,8" << std::endl;
+            }*/
+
+            //printf("pre-calc dist:%.8f\n", pixels_distance);
+
+            if (y_mag > .5/2 && z_mag > 1.7/2) {
+                pixels_distance = sqrt(pow(x_mag,2) + pow(y_mag-.5/2,2) + pow(z_mag-1.7/2,2));
+                //std::cout << "-y-z " << pixels_distance << std::endl;
+            }
+            else if (y_mag > .5/2) {
+                pixels_distance = sqrt(pow(x_mag,2) + pow(y_mag-.5/2,2));
+                //std::cout << "-y " << pixels_distance << std::endl;
             }
             else if (z_mag > 1.7/2) {
                 pixels_distance = sqrt(pow(x_mag,2) + pow(z_mag-1.7/2,2));
+                //std::cout << "-z " << pixels_distance << std::endl;
             }
             else {
                 pixels_distance = x_mag;
+                //std::cout << pixels_distance << std::endl;
             }
 
-            if ((x>x_left) && (y>y_offset) && (x<(width-x_left-x_right)/3+x_left) && (y<(height-2*y_offset)/3+y_offset)) { // Top-left quadrant -- Feather 1
+            if (x<width/3 && y<height/3) { // Top-left quadrant -- Feather 1
                 if (pixels_distance < closest[0] && pixels_distance > .001){
                     closest[0] = pixels_distance;
+                    //printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
-            } else if ((x>(width-x_left-x_right)/3+x_left) && (y>y_offset) && (x<2*(width-x_left-x_right)/3+x_left) && (y<(height-2*y_offset)/3+y_offset)) { // Top-middle quadrant -- Feather 2
+            } else if (x<2*width/3 && y<height/3) { // Top-middle quadrant -- Feather 2
                 if (pixels_distance < closest[1] && pixels_distance > .001){
                     closest[1] = pixels_distance;
+                    //printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
-            } else if ((x>2*(width-x_left-x_right)/3+x_left) && (y>y_offset) && (x<width-x_right) && (y<(height-2*y_offset)/3+y_offset)) { // Top-right quadrant -- Feather 3
+            } else if (y<height/3) { // Top-right quadrant -- Feather 3
                 if (pixels_distance < closest[2] && pixels_distance > .001){
                     closest[2] = pixels_distance;
+                    //printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
-            } else if ((x>x_left) && (y>(height-2*y_offset)/3+y_offset) && (x<(width-x_left-x_right)/3+x_left) && (y<2*(height-2*y_offset)/3+y_offset)) { // Middle-left quadrant -- Feather 4
+            } else if (x<width/3 && y>height/3 && y<2*height/3) { // Middle-left quadrant -- Feather 4
                 if (pixels_distance < closest[3] && pixels_distance > .001){
                     closest[3] = pixels_distance;
+                    //printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
-            } else if ((x>(width-x_left-x_right)/3+x_left) && (y>(height-2*y_offset)/3+y_offset) && (x<2*(width-x_left-x_right)/3+x_left) && (y<2*(height-2*y_offset)/3+y_offset)) { // Middle-middle quadrant -- Feather 5
+            } else if (x<2*width/3 && y>height/3 && y<2*height/3) { // Middle-middle quadrant -- Feather 5
                 if (pixels_distance < closest[4] && pixels_distance > .001){
                     closest[4] = pixels_distance;
+                    //printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
-            } else if ((x>2*(width-x_left-x_right)/3+x_left) && (y>(height-2*y_offset)/3+y_offset) && (x<width-x_right) && (y<2*(height-2*y_offset)/3+y_offset)) { // Middle-right quadrant -- Feather 6
+            } else if (y>height/3 && y<2*height/3) { // Middle-right quadrant -- Feather 6
                 if (pixels_distance < closest[5] && pixels_distance > .001){
                     closest[5] = pixels_distance;
+                    //printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
-            } else if ((x>x_left) && (y>2*(height-2*y_offset)/3+y_offset) && (x<(width-x_left-x_right)/2+x_left) && (y<height-y_offset)) { // Bottom-left quadrant -- Feather 7 
+            } else if (x<width/2 && y>2*height/3) { // Bottom-left quadrant -- Feather 7
                 if (pixels_distance < closest[6] && pixels_distance > .001){
                     closest[6] = pixels_distance;
+                    //printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
-            } else if ((x>(width-x_left-x_right)/2+x_left) && (y>2*(height-2*y_offset)/3+y_offset) && (x<width-x_right) && (y<height-y_offset)) { // Bottom-right quadrant -- Feather 8 
+            } else if (y>2*height/3) { // Bottom-right quadrant -- Feather 8
                 if (pixels_distance < closest[7] && pixels_distance > .001){
                     closest[7] = pixels_distance;
+                    //printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             }
         }
@@ -283,7 +304,7 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
     
     // converting physical distance to 0-255 scale
     for(int i=0; i<=7; i++) {
-        //std::cout << "feather: " << i+1 << " distance: " << closest[i];
+        std::cout << "feather: " << i+1 << " distance: " << closest[i] << std::endl;
         closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(1.413-.001));
         closest[i] = trunc(closest[i]);
         //std::cout << " scaled: " << closest[i] << std::endl;
@@ -402,12 +423,26 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 
 float* findMags(float y_angle, float z_angle, float pixel_dist) {
     float x, y, z;
+    static float a[3] = {};
 
-    y = sqrt(pixel_dist / (pow(tan(y_angle*PI/180.0),2) + 1 + pow(tan(z_angle*PI/180.0),2)));
-    x = y*tan(y_angle*PI/180);
-    z = y*tan(z_angle*PI/180);
-
-    static float a[3] = {x, y, z};
+    if (y_angle < 0 && z_angle < 0) {
+        x = pixel_dist / (sqrt(pow(tan(-y_angle * PI / 180.0), 2)) + pow(tan(-z_angle * PI / 180.0), 2) + 1);
+        //std::cout << "-y-z x: " << x << std::endl;
+    } else if (y_angle < 0) {
+        x = pixel_dist / (sqrt(pow(tan(-y_angle * PI / 180.0), 2)) + pow(tan(z_angle * PI / 180.0), 2) + 1);
+        //std::cout << "-y x: " << x << std::endl;
+    } else if (z_angle < 0){
+        x = pixel_dist / (sqrt(pow(tan(y_angle * PI / 180.0), 2)) + pow(tan(-z_angle * PI / 180.0), 2) + 1);
+        //std::cout << "-z x: " << x << std::endl;
+    } else {
+        x = pixel_dist / (sqrt(pow(tan(y_angle * PI / 180.0), 2)) + pow(tan(z_angle * PI / 180.0), 2) + 1);
+        //std::cout << "x: " << x << std::endl;
+    }
+    y = x * tan(y_angle * PI / 180.0);
+    z = x * tan(z_angle * PI / 180.0);
+    a[0] = x;
+    a[1] = y;
+    a[2] = z;
 
     return a;
 }
