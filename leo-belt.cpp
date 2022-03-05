@@ -7,15 +7,10 @@
 #include "third-party/imgui/imgui_impl_glfw.h"
 #include <SFML/Graphics.hpp>
 
-#include <sstream>
 #include <iostream>
-#include <fstream>
 #include <algorithm>
-#include <cstring>
 #include <string>
 #include <cmath>
-#include <time.h>
-#include <iomanip>
 #include <vector>
 #include <stdio.h>
 #include <unistd.h>
@@ -32,9 +27,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-  
-#define PORT     8080
-#define MAXLINE 1024
+
 #define serverIP "192.168.137.210"
 
 #define BUF_SIZE 123
@@ -345,7 +338,7 @@ int* printPixelDepth(rs2::video_frame& other_frame, const rs2::depth_frame& dept
     
     // converting physical distance to 0-255 scale
     for(int i=0; i<=7; i++) {
-        //std::cout << "feather: " << i+1 << " distance: " << closest[i];
+        std::cout << "feather: " << i+1 << " distance: " << closest[i] << std::endl;
         closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(2.0-.001));
         closest[i] = trunc(closest[i]);
         //std::cout << " scaled: " << closest[i] << std::endl;
