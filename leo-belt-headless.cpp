@@ -222,6 +222,9 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
             if (pixels_distance != 0) {
                 printf("pre-calc dist:%.8f\n", pixels_distance);
             }
+            else {
+                continue;
+            }
             
             if (x==0) {
                 y_angle = 37.5;
