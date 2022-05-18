@@ -6,6 +6,12 @@ cmake_minimum_required(VERSION 3.1.0)
 # Save the command line compile commands in the build output
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+project(leo-belt)
+project(leo-belt-headless)
+project(leo-test)
+project(shutdown)
+#project(server)
+
 # Make project require C++11
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -35,7 +41,6 @@ endif()
 
     configure_file(white-square.png white-square.png COPYONLY)
 
-    project(leo-belt)
     add_executable(leo-belt leo-belt.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp rs232.c)
     set_property(TARGET leo-belt PROPERTY CXX_STANDARD 11)
     target_link_libraries(leo-belt ${REALSENSE2_FOUND})
@@ -49,12 +54,10 @@ endif()
     target_link_libraries(leo-belt sfml-graphics)
     target_link_libraries(leo-belt sfml-window)
 
-    #project(server)
     #add_executable(server server.cpp)
     #target_link_libraries(server ${REALSENSE2_FOUND})
     #target_link_libraries(server ${REALSENSE2GL_FOUND})
 
-    project(leo-belt-headless)
     add_executable(leo-belt-headless leo-belt-headless.cpp rs232.c)
     set_property(TARGET leo-belt-headless PROPERTY CXX_STANDARD 11)
     target_link_libraries(leo-belt-headless ${REALSENSE2_FOUND})
@@ -66,7 +69,6 @@ endif()
     target_link_libraries(leo-belt-headless GL)
     target_link_libraries(leo-belt-headless GLU)
 
-    project(leo-test)
     add_executable(leo-test leo-test.cpp rs232.c)
     set_property(TARGET leo-test PROPERTY CXX_STANDARD 11)
     target_link_libraries(leo-test ${REALSENSE2_FOUND})
@@ -78,7 +80,6 @@ endif()
     target_link_libraries(leo-test GL)
     target_link_libraries(leo-test GLU)
 
-    project(shutdown)
     add_executable(shutdown shutdown.cpp rs232.c)
     set_property(TARGET shutdown PROPERTY CXX_STANDARD 11)
 

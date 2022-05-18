@@ -110,7 +110,7 @@ int main(int argc, char * argv[]) try
     //std::ofstream out("/home/pi/leo_belt/error.txt");
     //std::cout.rdbuf(out.rdbuf());
 
-    while (true) // Application still alive?
+    while (getFrame < 1000) // Application still alive?
     {
         try {
             // Using the align object, we block the application until a frameset is available
@@ -142,6 +142,11 @@ int main(int argc, char * argv[]) try
         getFrame++;
     }
 
+    stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
+    std::cout << " time: ";
+    std::cout << duration.count() << std::endl;
+    
     usleep(1000000);
     silenceAllFeathers();
     return EXIT_SUCCESS;

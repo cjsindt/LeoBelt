@@ -158,6 +158,11 @@ int main(int argc, char * argv[]) try
         }
     }
 
+    stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
+    std::cout << " time: ";
+    std::cout << duration.count() << std::endl;
+            
     usleep(1000000);
     silenceAllFeathers();
     return EXIT_SUCCESS;
