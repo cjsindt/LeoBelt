@@ -33,6 +33,7 @@ char str_send[2048][BUF_SIZE]; // send data buffer
 int cport_nr = 16;
 float h_height = 1.7;
 float h_width = .5;
+int getFrame = 0;
 
 float get_depth_scale(rs2::device dev);
 rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams);
@@ -79,7 +80,7 @@ int main(int argc, char * argv[]) try
         printf("Can not open comport\n");
         //return(0);
     }
-    
+
     // Rapid buzz to indicate device is on and all feathers are functioning
     for (int i=1; i<=8; i++) {
         RS232_cputs(cport_nr, str_send[256*i-1]);
@@ -90,12 +91,8 @@ int main(int argc, char * argv[]) try
     
     // Create a pipeline to easily configure and start the camera
     rs2::config cfg;
-    cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 60);
+    cfg.enable_stream(RS2_STREAM_DEPTH, -1, 848, 480, RS2_FORMAT_ANY, 60);
     rs2::pipeline pipe;
-
-    // Declare filters
-    rs2::decimation_filter dec_filter;
-    rs2::spatial_filter spat_filter;
     
     //The start function returns the pipeline profile which the pipeline used to start the device
     rs2::pipeline_profile profile = pipe.start(cfg);
@@ -104,30 +101,22 @@ int main(int argc, char * argv[]) try
     // Using the pipeline's profile, we can retrieve the device that the pipeline uses
     float depth_scale = get_depth_scale(profile.get_device());
 
-    int getFrame = 0;
     rs2::frameset frameset;
     int* c;
-    
+
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     
-   // std::ofstream out("/home/pi/leo_belt/error.txt");
+    //std::ofstream out("/home/pi/leo_belt/error.txt");
     //std::cout.rdbuf(out.rdbuf());
 
-    while (getFrame < 1) // Application still alive?
+    while (true) // Application still alive?
     {
         try {
             // Using the align object, we block the application until a frameset is available
             frameset = pipe.wait_for_frames(34);
         }
         catch (const std::exception& e) {
-            stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
-            std::cout << "(catch block) frames: ";
-            std::cout << getFrame;
-            std::cout << " time: ";
-            std::cout << duration.count() << std::endl;
-            
             continue;
         }
 
@@ -151,18 +140,7 @@ int main(int argc, char * argv[]) try
         c = printPixelDepth(aligned_depth_frame, depth_scale);
 
         getFrame++;
-        
-        if (getFrame%1000 == 0) {
-            stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
-            std::cout << "frames: ";
-            std::cout << getFrame;
-            std::cout << " time: ";
-            std::cout << duration.count() << std::endl;
-        }
     }
-
-    std::cout << getFrame << std::endl;
 
     usleep(1000000);
     silenceAllFeathers();
@@ -195,7 +173,7 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 
     const uint16_t* p_depth_frame = reinterpret_cast<const uint16_t*>(depth_frame.get_data());
     
-    int width = 640;
+    int width = 848;
     int height = 480;
     int other_bpp = 4;
 
@@ -204,7 +182,7 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 
     float y_angle = 37.5;
     float z_angle = 29.0;
-    float x_mag, y_mag, z_mag;
+    float x_mag, z_mag;
     float* mags = {};
 
 #pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
@@ -219,18 +197,15 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
         {
             // Get the depth value of the current pixel
             auto pixels_distance = depth_scale * p_depth_frame[depth_pixel_index];
-            if (pixels_distance != 0) {
-                printf("pre-calc dist:%.8f\n", pixels_distance);
-            }
-            else {
+            if (pixels_distance == 0) {
                 continue;
             }
             
             if (x==0) {
-                y_angle = 37.5;
+                y_angle = 43.5;
             }
             else {
-                y_angle -= 37.5/320.0;
+                y_angle -= 43.5/424.0;
             }
 
             mags = findMags(y_angle, z_angle, pixels_distance);
@@ -238,72 +213,50 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
             x_mag = *(mags+0);
             z_mag = *(mags+1);
 
-            if (x==0 && y==0) {
-                std::cout << "feathers 1,2,3" << std::endl;
-            }
-            else if (x==0 && y==height/3) {
-                std::cout << "feathers 4,5,6" << std::endl;
-            }
-            else if (x==0 && y==2*height/3) {
-                std::cout << "feathers 7,8" << std::endl;
-            }
-
             if (x_mag > h_width/2 && z_mag > h_height/2) {
                 pixels_distance = sqrt(pow(pixels_distance,2) + pow(x_mag-h_width/2,2) + pow(z_mag-h_height/2,2));
-                //std::cout << "-y-z " << pixels_distance << std::endl;
             }
             else if (x_mag > h_width/2) {
                 pixels_distance = sqrt(pow(pixels_distance,2) + pow(x_mag-h_width/2,2));
-                //std::cout << "-y " << pixels_distance << std::endl;
             }
             else if (z_mag > h_height/2) {
                 pixels_distance = sqrt(pow(pixels_distance,2) + pow(z_mag-h_height/2,2));
-                //std::cout << "-z " << pixels_distance << std::endl;
             }
             else {
                 pixels_distance = pixels_distance;
-                //std::cout << pixels_distance << std::endl;
             }
 
             if (x<width/3 && y<height/3) { // Top-left quadrant -- Feather 1
                 if (pixels_distance < closest[0] && pixels_distance > .001){
                     closest[0] = pixels_distance;
-                    printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             } else if (x<2*width/3 && y<height/3) { // Top-middle quadrant -- Feather 2
                 if (pixels_distance < closest[1] && pixels_distance > .001){
                     closest[1] = pixels_distance;
-                    printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             } else if (y<height/3) { // Top-right quadrant -- Feather 3
                 if (pixels_distance < closest[2] && pixels_distance > .001){
                     closest[2] = pixels_distance;
-                    printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             } else if (x<width/3 && y>height/3 && y<2*height/3) { // Middle-left quadrant -- Feather 4
                 if (pixels_distance < closest[3] && pixels_distance > .001){
                     closest[3] = pixels_distance;
-                    printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             } else if (x<2*width/3 && y>height/3 && y<2*height/3) { // Middle-middle quadrant -- Feather 5
                 if (pixels_distance < closest[4] && pixels_distance > .001){
                     closest[4] = pixels_distance;
-                    printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             } else if (y>height/3 && y<2*height/3) { // Middle-right quadrant -- Feather 6
                 if (pixels_distance < closest[5] && pixels_distance > .001){
                     closest[5] = pixels_distance;
-                    printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             } else if (x<width/2 && y>2*height/3) { // Bottom-left quadrant -- Feather 7
                 if (pixels_distance < closest[6] && pixels_distance > .001){
                     closest[6] = pixels_distance;
-                    printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             } else if (y>2*height/3) { // Bottom-right quadrant -- Feather 8
                 if (pixels_distance < closest[7] && pixels_distance > .001){
                     closest[7] = pixels_distance;
-                    printf("y:%.3f z:%.3f dist:%.8f\n", y_angle, z_angle, pixels_distance);
                 }
             }
         }
@@ -311,10 +264,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
     
     // converting physical distance to 0-255 scale
     for(int i=0; i<=7; i++) {
-        std::cout << "feather: " << i+1 << " distance: " << closest[i] << std::endl;
         closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(1.413-.001));
         closest[i] = trunc(closest[i]);
-        //std::cout << " scaled: " << closest[i] << std::endl;
     }
     
     // Obtaining (R)G(B) color values for each quadrant in heat map
@@ -333,15 +284,11 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
             color[i] = 0;
             color[i+8] = 255;
         }
-        //std::cout << "red: " << color[i] << " blue: " << color[i+8] << std::endl;
     }
     
     //Feather 1
-    //std::cout << "Quadrant 1 closest: " << closest[0] << "m -> Intensity: ";
-    //printf("Quadrant 1 closest: %.3fm Intensity: ", closest[0]);
     if(closest[0] <= 255 && closest[0] >= 0) {
         int n = closest[0];
-        //std::cout << "feather 1: " << n << " " << str_send[n] << std::endl;
         RS232_cputs(cport_nr, str_send[n]);
     }
     else {
@@ -349,10 +296,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 	}
     
     //Feather 2
-    //printf("Quadrant 2 closest: %.3fm Intensity: ", closest[1]);
     if(closest[1] <= 255 && closest[1] >= 0) {
         int n = closest[1] + 256;
-        //std::cout << "feather 2: " << n << " " << str_send[n] << std::endl;
 		RS232_cputs(cport_nr, str_send[n]);
 	}
     else {
@@ -360,10 +305,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 	}
     
     //Feather 3
-    //printf("Quadrant 3 closest: %.3fm Intensity: ", closest[2]);
     if(closest[2] <= 255 && closest[2] >= 0) {
         int n = closest[2] + 2*256;
-        //std::cout << "feather 3: " << n << " " << str_send[n] << std::endl;
 		RS232_cputs(cport_nr, str_send[n]);
 	}
     else {
@@ -371,10 +314,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 	}
     
     //Feather 4
-    //printf("Quadrant 4 closest: %.3fm Intensity: ", closest[3]);
     if(closest[3] <= 255 && closest[3] >= 0) {
         int n = closest[3] + 3*256;
-        //std::cout << "feather 4: " << n << " " << str_send[n] << std::endl;
 		RS232_cputs(cport_nr, str_send[n]);
 	}
     else {
@@ -382,10 +323,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 	}
     
     //Feather 5
-    //printf("Quadrant 5 closest: %.3fm Intensity: ", closest[4]);
     if(closest[4] <= 255 && closest[4] >= 0) {
         int n = closest[4] + 4*256;
-        //std::cout << "feather 5: " << n << " " << str_send[n] << std::endl;
 		RS232_cputs(cport_nr, str_send[n]);
 	}
     else {
@@ -393,10 +332,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 	}
     
     //Feather 6
-    //printf("Quadrant 6 closest: %.3fm Intensity: ", closest[5]);
     if(closest[5] <= 255 && closest[5] >= 0) {
         int n = closest[5] + 5*256;
-        //std::cout << "feather 6: " << n << " " << str_send[n] << std::endl;
 		RS232_cputs(cport_nr, str_send[n]);
 	}
     else {
@@ -404,10 +341,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 	}
     
     //Feather 7
-    //printf("Quadrant 7 closest: %.3fm Intensity: ", closest[6]);
     if(closest[6] <= 255 && closest[6] >= 0) {
         int n = closest[6] + 6*256;
-        //std::cout << "feather 7: " << n << " " << str_send[n] << std::endl;
 		RS232_cputs(cport_nr, str_send[n]);
 	}
     else {
@@ -415,10 +350,8 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 	}
     
     //Feather 8
-    //printf("Quadrant 8 closest: %.3fm Intensity: ", closest[7]);
     if(closest[7] <= 255 && closest[7] >= 0) {
         int n = closest[7] + 7*256;
-        //std::cout << "feather 8: " << n << " " << str_send[n] << std::endl;
 		RS232_cputs(cport_nr, str_send[n]);
 	}
     else {
