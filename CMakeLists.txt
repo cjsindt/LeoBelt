@@ -3,11 +3,6 @@
 #  minimum required cmake version: 3.1.0
 cmake_minimum_required(VERSION 3.1.0)
 
-project(leo-belt)
-#project(server)
-project(leo-belt-headless)
-project(shutdown)
-
 # Save the command line compile commands in the build output
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
@@ -40,35 +35,53 @@ endif()
 
     configure_file(white-square.png white-square.png COPYONLY)
 
+    project(leo-belt)
     add_executable(leo-belt leo-belt.cpp third-party/imgui/imgui.cpp third-party/imgui/imgui_draw.cpp third-party/imgui/imgui_impl_glfw.cpp rs232.c)
-    #add_executable(server server.cpp)
-    add_executable(leo-belt-headless leo-belt-headless.cpp rs232.c)
-    add_executable(shutdown shutdown.cpp rs232.c)
     set_property(TARGET leo-belt PROPERTY CXX_STANDARD 11)
-    set_property(TARGET leo-belt-headless PROPERTY CXX_STANDARD 11)
-    set_property(TARGET shutdown PROPERTY CXX_STANDARD 11)
     target_link_libraries(leo-belt ${REALSENSE2_FOUND})
-    #target_link_libraries(server ${REALSENSE2_FOUND})
-    target_link_libraries(leo-belt-headless ${REALSENSE2_FOUND})
     target_link_libraries(leo-belt ${REALSENSE2GL_FOUND})
-    #target_link_libraries(server ${REALSENSE2GL_FOUND})
-    target_link_libraries(leo-belt-headless ${REALSENSE2GL_FOUND})
     target_link_libraries(leo-belt ${DEPENDENCIES})
     target_link_libraries(leo-belt glfw)
     target_link_libraries(leo-belt pthread)
     target_link_libraries(leo-belt glut)
     target_link_libraries(leo-belt GL)
     target_link_libraries(leo-belt GLU)
+    target_link_libraries(leo-belt sfml-graphics)
+    target_link_libraries(leo-belt sfml-window)
+
+    #project(server)
+    #add_executable(server server.cpp)
+    #target_link_libraries(server ${REALSENSE2_FOUND})
+    #target_link_libraries(server ${REALSENSE2GL_FOUND})
+
+    project(leo-belt-headless)
+    add_executable(leo-belt-headless leo-belt-headless.cpp rs232.c)
+    set_property(TARGET leo-belt-headless PROPERTY CXX_STANDARD 11)
+    target_link_libraries(leo-belt-headless ${REALSENSE2_FOUND})
+    target_link_libraries(leo-belt-headless ${REALSENSE2GL_FOUND})
     target_link_libraries(leo-belt-headless ${DEPENDENCIES})
     target_link_libraries(leo-belt-headless glfw)
     target_link_libraries(leo-belt-headless pthread)
     target_link_libraries(leo-belt-headless glut)
     target_link_libraries(leo-belt-headless GL)
     target_link_libraries(leo-belt-headless GLU)
-    target_link_libraries(leo-belt sfml-graphics)
-    target_link_libraries(leo-belt sfml-window)
-  
-   
+
+    project(leo-test)
+    add_executable(leo-test leo-test.cpp rs232.c)
+    set_property(TARGET leo-test PROPERTY CXX_STANDARD 11)
+    target_link_libraries(leo-test ${REALSENSE2_FOUND})
+    target_link_libraries(leo-test ${REALSENSE2GL_FOUND})
+    target_link_libraries(leo-test ${DEPENDENCIES})
+    target_link_libraries(leo-test glfw)
+    target_link_libraries(leo-test pthread)
+    target_link_libraries(leo-test glut)
+    target_link_libraries(leo-test GL)
+    target_link_libraries(leo-test GLU)
+
+    project(shutdown)
+    add_executable(shutdown shutdown.cpp rs232.c)
+    set_property(TARGET shutdown PROPERTY CXX_STANDARD 11)
+
     include_directories(common third-party/imgui)
 
     set_target_properties (leo-belt PROPERTIES FOLDER Examples)
@@ -91,6 +104,15 @@ install(
     CONFIGURATIONS Release
     RUNTIME DESTINATION
     ${CMAKE_INSTALL_PREFIX}/bin
+)
+install(
+        TARGETS
+
+        leo-test
+
+        CONFIGURATIONS Release
+        RUNTIME DESTINATION
+        ${CMAKE_INSTALL_PREFIX}/bin
 )
 install(
     TARGETS
