@@ -131,11 +131,14 @@ int main(int argc, char * argv[]) try
         c = printPixelDepth(aligned_depth_frame, depth_scale);
 
         getFrame++;
-    }
 
-    usleep(1000000);
-    silenceAllFeathers();
-    return EXIT_SUCCESS;
+        if (getFrame%100 == 0) {
+            stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop-start);
+            std::cout << "time: ";
+            std::cout << duration.count() << std::endl;
+        }
+    }
 }
 
 catch (const rs2::error & e)
