@@ -132,7 +132,7 @@ int main(int argc, char * argv[]) try
 
         getFrame++;
 
-        if (getFrame%100 == 0) {
+        if (getFrame%1000 == 0) {
             stop = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop-start);
             std::cout << "time: ";
