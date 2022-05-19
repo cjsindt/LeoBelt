@@ -98,6 +98,7 @@ int main(int argc, char * argv[]) try
     int* c;
 
     auto start = std::chrono::high_resolution_clock::now();
+    int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     std::time_t start_time = std::chrono::system_clock::to_time_t(start);
     
     std::ofstream out("/home/pi/leo_belt/log.txt", std::ios::app);
@@ -135,10 +136,12 @@ int main(int argc, char * argv[]) try
         c = printPixelDepth(aligned_depth_frame, depth_scale);
 
         getFrame++;
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+        duration = (int) duration/100;
 
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count() == 60000) {
-            std::cout << "frames: ";
-            std::cout << getFrame << std::endl;
+        if (duration == 600) {
+            std::cout << "fps: ";
+            std::cout << getFrame/60 << std::endl;
 
             getFrame = 0;
         }
