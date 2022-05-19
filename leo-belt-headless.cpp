@@ -136,14 +136,15 @@ int main(int argc, char * argv[]) try
         c = printPixelDepth(aligned_depth_frame, depth_scale);
 
         getFrame++;
-        duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-        duration = (int) duration/100;
+        duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now()-start).count();
 
-        if (duration == 600) {
-            std::cout << "fps: ";
-            std::cout << getFrame/60 << std::endl;
+        if (duration%60 == 0) {
+            if (getFrame > 100) {
+                std::cout << "fps: ";
+                std::cout << getFrame / 60 << std::endl;
 
-            getFrame = 0;
+                getFrame = 0;
+            }
         }
     }
 }
