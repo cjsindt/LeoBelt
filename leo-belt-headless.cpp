@@ -2,30 +2,21 @@
 // Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 #include <librealsense2/rs.hpp>
-#include "common/example.hpp"
 #include "third-party/imgui/imgui.h" // <imgui.h>
 #include "third-party/imgui/imgui_impl_glfw.h"
 
-#include <sstream>
 #include <iostream>
-#include <fstream>
 #include <algorithm>
 #include <cstring>
 #include <string>
 #include <cmath>
-#include <time.h>
-#include <iomanip>
 #include <vector>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
 #include "rs232.h"
 #include <chrono>
-#include <math.h>
 
-#define PORT     8080
-#define MAXLINE 1024
-#define serverIP "192.168.137.210"
 #define PI 3.14159265
 
 #define BUF_SIZE 123
@@ -110,7 +101,7 @@ int main(int argc, char * argv[]) try
     //std::ofstream out("/home/pi/leo_belt/error.txt");
     //std::cout.rdbuf(out.rdbuf());
 
-    while (getFrame < 1000) // Application still alive?
+    while (true) // Application still alive?
     {
         try {
             // Using the align object, we block the application until a frameset is available
@@ -142,11 +133,6 @@ int main(int argc, char * argv[]) try
         getFrame++;
     }
 
-    stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
-    std::cout << " time: ";
-    std::cout << duration.count() << std::endl;
-    
     usleep(1000000);
     silenceAllFeathers();
     return EXIT_SUCCESS;
@@ -177,120 +163,108 @@ void silenceAllFeathers(){
 int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
 
     const uint16_t* p_depth_frame = reinterpret_cast<const uint16_t*>(depth_frame.get_data());
-    
+
     int width = 848;
     int height = 480;
-    int other_bpp = 4;
 
     float closest[8] = {10,10,10,10,10,10,10,10};
     static int color[16] = {};
 
-    float y_angle = 37.5;
-    float z_angle = 29.0;
+    float y_angle = 0;
+    float z_angle = 0;
     float x_mag, z_mag;
     float* mags = {};
+    float closest_pix = 10;
+    auto depth_pixel_index = 0;
+    float pixels_distance = 0;
 
 #pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
-    for (int y = 0; y < height; y++)
-    {
-        auto depth_pixel_index = y * width;
-        if (y!=0) {
-            z_angle -= 29.0/240.0;
-        }
+    for (int j = 0; j < height; j=j+4) {
+        for (int i = 0; i < width; i=i+4) {
 
-        for (int x = 0; x < width; x++, ++depth_pixel_index)
-        {
-            // Get the depth value of the current pixel
-            auto pixels_distance = depth_scale * p_depth_frame[depth_pixel_index];
-            if (pixels_distance == 0) {
-                continue;
-            }
-            
-            if (x==0) {
-                y_angle = 43.5;
-            }
-            else {
-                y_angle -= 43.5/424.0;
+            closest_pix = 10;
+
+            for (int y = 0; y < 4; y++) {
+                for (int x = 0; x < 4; x++) {
+                    depth_pixel_index = j*width + i + y*width + x;
+                    pixels_distance = depth_scale*p_depth_frame[depth_pixel_index];
+
+                    if (pixels_distance < closest_pix && pixels_distance != 0) {
+                        closest_pix = pixels_distance;
+                        y_angle = 43.5 - (i+x)*(float)(43.5/424);
+                        z_angle = 29.0 - (j+y)*(float)(29.0/240);
+
+                        if (y_angle < 0) { y_angle = -y_angle; }
+                        if (z_angle < 0) { z_angle = -z_angle; }
+                    }
+
+                }
             }
 
-            mags = findMags(y_angle, z_angle, pixels_distance);
-
+            mags = findMags(y_angle, z_angle, closest_pix);
             x_mag = *(mags+0);
             z_mag = *(mags+1);
 
-            if (x_mag > h_width/2 && z_mag > h_height/2) {
-                pixels_distance = sqrt(pow(pixels_distance,2) + pow(x_mag-h_width/2,2) + pow(z_mag-h_height/2,2));
-            }
-            else if (x_mag > h_width/2) {
-                pixels_distance = sqrt(pow(pixels_distance,2) + pow(x_mag-h_width/2,2));
-            }
-            else if (z_mag > h_height/2) {
-                pixels_distance = sqrt(pow(pixels_distance,2) + pow(z_mag-h_height/2,2));
-            }
-            else {
-                pixels_distance = pixels_distance;
-            }
+            if (x_mag > h_width/2 && z_mag > h_height/2) { pixels_distance = sqrt(pow(closest_pix,2) + pow(x_mag-h_width/2,2) + pow(z_mag-h_height/2,2)); }
+            else if (x_mag > h_width/2) { pixels_distance = sqrt(pow(closest_pix,2) + pow(x_mag-h_width/2,2)); }
+            else if (z_mag > h_height/2) { pixels_distance = sqrt(pow(closest_pix,2) + pow(z_mag-h_height/2,2)); }
+            else { pixels_distance = closest_pix; }
 
-            if (x<width/3 && y<height/3) { // Top-left quadrant -- Feather 1
+            if (i<width/3 && j<height/3) { // Top-left quadrant -- Feather 1
                 if (pixels_distance < closest[0] && pixels_distance > .001){
                     closest[0] = pixels_distance;
                 }
-            } else if (x<2*width/3 && y<height/3) { // Top-middle quadrant -- Feather 2
+            } else if (i<2*width/3 && j<height/3) { // Top-middle quadrant -- Feather 2
                 if (pixels_distance < closest[1] && pixels_distance > .001){
                     closest[1] = pixels_distance;
                 }
-            } else if (y<height/3) { // Top-right quadrant -- Feather 3
+            } else if (j<height/3) { // Top-right quadrant -- Feather 3
                 if (pixels_distance < closest[2] && pixels_distance > .001){
                     closest[2] = pixels_distance;
                 }
-            } else if (x<width/3 && y>height/3 && y<2*height/3) { // Middle-left quadrant -- Feather 4
+            } else if (i<width/3 && j<2*height/3) { // Middle-left quadrant -- Feather 4
                 if (pixels_distance < closest[3] && pixels_distance > .001){
                     closest[3] = pixels_distance;
                 }
-            } else if (x<2*width/3 && y>height/3 && y<2*height/3) { // Middle-middle quadrant -- Feather 5
+            } else if (i<2*width/3 && j<2*height/3) { // Middle-middle quadrant -- Feather 5
                 if (pixels_distance < closest[4] && pixels_distance > .001){
                     closest[4] = pixels_distance;
                 }
-            } else if (y>height/3 && y<2*height/3) { // Middle-right quadrant -- Feather 6
+            } else if (j<2*height/3) { // Middle-right quadrant -- Feather 6
                 if (pixels_distance < closest[5] && pixels_distance > .001){
                     closest[5] = pixels_distance;
                 }
-            } else if (x<width/2 && y>2*height/3) { // Bottom-left quadrant -- Feather 7
+            } else if (i<width/2 && j>2*height/3) { // Bottom-left quadrant -- Feather 7
                 if (pixels_distance < closest[6] && pixels_distance > .001){
                     closest[6] = pixels_distance;
                 }
-            } else if (y>2*height/3) { // Bottom-right quadrant -- Feather 8
+            } else if (j>2*height/3) { // Bottom-right quadrant -- Feather 8
                 if (pixels_distance < closest[7] && pixels_distance > .001){
                     closest[7] = pixels_distance;
                 }
             }
         }
     }
-    
+
     // converting physical distance to 0-255 scale
     for(int i=0; i<=7; i++) {
         closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(1.413-.001));
         closest[i] = trunc(closest[i]);
     }
-    
+
     // Obtaining (R)G(B) color values for each quadrant in heat map
     for(int i=0; i<=7; i++) {
         if(closest[i]<=255 && closest[i]>=0) {
             color[i] = closest[i];
             color[i+8] = 255 - closest[i];
         }
-        else if (closest[i]==-1020) {
-            color[i] = 255;
-            color[i+8] = 0;
-            closest[i] = 255;
-        }
-        // Anything greater than 2m away will remain blue on map
+            // Anything greater than 2m away will remain blue on map
         else {
             color[i] = 0;
             color[i+8] = 255;
         }
     }
-    
+
     //Feather 1
     if(closest[0] <= 255 && closest[0] >= 0) {
         int n = closest[0];
@@ -298,71 +272,71 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
     }
     else {
         RS232_cputs(cport_nr, str_send[0]);
-	}
-    
+    }
+
     //Feather 2
     if(closest[1] <= 255 && closest[1] >= 0) {
         int n = closest[1] + 256;
-		RS232_cputs(cport_nr, str_send[n]);
-	}
+        RS232_cputs(cport_nr, str_send[n]);
+    }
     else {
         RS232_cputs(cport_nr, str_send[0+256]);
-	}
-    
+    }
+
     //Feather 3
     if(closest[2] <= 255 && closest[2] >= 0) {
         int n = closest[2] + 2*256;
-		RS232_cputs(cport_nr, str_send[n]);
-	}
+        RS232_cputs(cport_nr, str_send[n]);
+    }
     else {
         RS232_cputs(cport_nr, str_send[0+(2*256)]);
-	}
-    
+    }
+
     //Feather 4
     if(closest[3] <= 255 && closest[3] >= 0) {
         int n = closest[3] + 3*256;
-		RS232_cputs(cport_nr, str_send[n]);
-	}
+        RS232_cputs(cport_nr, str_send[n]);
+    }
     else {
         RS232_cputs(cport_nr, str_send[0+(3*256)]);
-	}
-    
+    }
+
     //Feather 5
     if(closest[4] <= 255 && closest[4] >= 0) {
         int n = closest[4] + 4*256;
-		RS232_cputs(cport_nr, str_send[n]);
-	}
+        RS232_cputs(cport_nr, str_send[n]);
+    }
     else {
         RS232_cputs(cport_nr, str_send[0+(4*256)]);
-	}
-    
+    }
+
     //Feather 6
     if(closest[5] <= 255 && closest[5] >= 0) {
         int n = closest[5] + 5*256;
-		RS232_cputs(cport_nr, str_send[n]);
-	}
+        RS232_cputs(cport_nr, str_send[n]);
+    }
     else {
         RS232_cputs(cport_nr, str_send[0+(5*256)]);
-	}
-    
+    }
+
     //Feather 7
     if(closest[6] <= 255 && closest[6] >= 0) {
         int n = closest[6] + 6*256;
-		RS232_cputs(cport_nr, str_send[n]);
-	}
+        RS232_cputs(cport_nr, str_send[n]);
+    }
     else {
         RS232_cputs(cport_nr, str_send[0+(6*256)]);
-	}
-    
+    }
+
     //Feather 8
     if(closest[7] <= 255 && closest[7] >= 0) {
         int n = closest[7] + 7*256;
-		RS232_cputs(cport_nr, str_send[n]);
-	}
+        RS232_cputs(cport_nr, str_send[n]);
+    }
     else {
         RS232_cputs(cport_nr, str_send[0+(7*256)]);
-	}    
-    
+    }
+
     return color;
 }
 
@@ -370,19 +344,8 @@ float* findMags(float y_angle, float z_angle, float pixel_dist) {
     float x, z;
     static float a[2] = {};
 
-    if (y_angle < 0 && z_angle < 0) {
-        z = pixel_dist*tan(-z_angle*PI/180);
-        x = pixel_dist*tan(-y_angle*PI/180);
-    } else if (y_angle < 0) {
-        z = pixel_dist*tan(z_angle*PI/180);
-        x = pixel_dist*tan(-y_angle*PI/180);
-    } else if (z_angle < 0){
-        z = pixel_dist*tan(-z_angle*PI/180);
-        x = pixel_dist*tan(y_angle*PI/180);
-    } else {
-        z = pixel_dist*tan(z_angle*PI/180);
-        x = pixel_dist*tan(y_angle*PI/180);
-    }
+    z = pixel_dist*tan(z_angle*PI/180);
+    x = pixel_dist*tan(y_angle*PI/180);
 
     a[0] = x;
     a[1] = z;
