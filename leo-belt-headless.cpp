@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include "rs232.h"
 #include <chrono>
+#include <ctime>
 
 #define PI 3.14159265
 
@@ -97,9 +98,12 @@ int main(int argc, char * argv[]) try
     int* c;
 
     auto start = std::chrono::high_resolution_clock::now();
+    std::time_t start_time = std::chrono::system_clock::to_time_t(start);
     
     std::ofstream out("/home/pi/leo_belt/log.txt", std::ios::app);
     std::cout.rdbuf(out.rdbuf());
+
+    std::cout << "Program start: " << std::ctime(&start_time) << std::endl;
 
     while (true) // Application still alive?
     {
@@ -132,9 +136,11 @@ int main(int argc, char * argv[]) try
 
         getFrame++;
 
-        if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now()-start).count() == 60) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count() == 60000) {
             std::cout << "frames: ";
             std::cout << getFrame << std::endl;
+
+            getFrame = 0;
         }
     }
 }
