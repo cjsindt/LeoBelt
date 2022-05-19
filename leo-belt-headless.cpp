@@ -6,6 +6,7 @@
 #include "third-party/imgui/imgui_impl_glfw.h"
 
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <cstring>
 #include <string>
@@ -96,10 +97,9 @@ int main(int argc, char * argv[]) try
     int* c;
 
     auto start = std::chrono::high_resolution_clock::now();
-    auto stop = std::chrono::high_resolution_clock::now();
     
-    //std::ofstream out("/home/pi/leo_belt/error.txt");
-    //std::cout.rdbuf(out.rdbuf());
+    std::ofstream out("/home/pi/leo_belt/log.txt", std::ios::app);
+    std::cout.rdbuf(out.rdbuf());
 
     while (true) // Application still alive?
     {
@@ -132,11 +132,9 @@ int main(int argc, char * argv[]) try
 
         getFrame++;
 
-        if (getFrame%1000 == 0) {
-            stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop-start);
-            std::cout << "time: ";
-            std::cout << duration.count() << std::endl;
+        if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now()-start).count() == 60) {
+            std::cout << "frames: ";
+            std::cout << getFrame << std::endl;
         }
     }
 }
