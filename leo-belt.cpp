@@ -30,9 +30,13 @@
 
 #define serverIP "192.168.137.210"
 
+#define PI 3.14159265
 #define BUF_SIZE 123
 char str_send[2048][BUF_SIZE]; // send data buffer
 int cport_nr = 16;
+float h_height = 1.7;
+float h_width = .5;
+int getFrame = 0;
 
 float get_depth_scale(rs2::device dev);
 rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams);
@@ -40,6 +44,7 @@ bool profile_changed(const std::vector<rs2::stream_profile>& current, const std:
 int* printPixelDepth(rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame, float depth_scale);
 void silenceAllFeathers();
 void testButton();
+float* findMags(float y_angle, float z_angle, float pixel_dist);
 
 int main(int argc, char * argv[]) try
 {
@@ -87,7 +92,7 @@ int main(int argc, char * argv[]) try
     
     // Create a pipeline to easily configure and start the camera
     rs2::config cfg;
-    cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 30);
+    cfg.enable_stream(RS2_STREAM_DEPTH, -1, 848, 480, RS2_FORMAT_ANY, 30);
     cfg.enable_stream(RS2_STREAM_COLOR, -1, 640, 480, RS2_FORMAT_RGBA8, 30);
     rs2::pipeline pipe;
     
@@ -120,7 +125,7 @@ int main(int argc, char * argv[]) try
     
     sf::Sprite s1(t1), s2(t1), s3(t1), s4(t1), s5(t1), s6(t1), s7(t7), s8(t7);
 
-    int getFrame = 0;
+    rs2::frameset frameset;
     int* c;
     /*
     // Client-side socket
@@ -162,14 +167,13 @@ int main(int argc, char * argv[]) try
                 app.close();
             }
         }
-        
-        rs2::frameset frameset;
+
         try {
             // Using the align object, we block the application until a frameset is available
             frameset = pipe.wait_for_frames();
         }
         catch (const std::exception& e) {
-            std::cout << e.what();
+            continue;
         }
 
         if (profile_changed(pipe.get_active_profile().get_streams(), profile.get_streams()))
@@ -275,60 +279,86 @@ void silenceAllFeathers(){
 int* printPixelDepth(rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame, float depth_scale) {
 
     const uint16_t* p_depth_frame = reinterpret_cast<const uint16_t*>(depth_frame.get_data());
-    
-    uint8_t* p_other_frame = reinterpret_cast<uint8_t*>(const_cast<void*>(other_frame.get_data()));
 
-    int width = other_frame.get_width();
-    int height = other_frame.get_height();
-    int other_bpp = other_frame.get_bytes_per_pixel();
+    int width = 848;
+    int height = 480;
 
     float closest[8] = {10,10,10,10,10,10,10,10};
     static int color[16] = {};
+
+    float y_angle = 0;
+    float z_angle = 0;
+    float x_mag, z_mag;
+    float* mags = {};
+    float closest_pix = 10;
+    auto depth_pixel_index = 0;
+    float pixels_distance = 0;
     
     int x_left = 96.97;
     int x_right = 135.76;
     int y_offset = 78.37;
 
 #pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
-    for (int y = 0; y < height; y++)
-    {
-        auto depth_pixel_index = y * width;
-        for (int x = 0; x < width; x++, ++depth_pixel_index)
-        {
-            // Get the depth value of the current pixel
-            auto pixels_distance = depth_scale * p_depth_frame[depth_pixel_index];
-            
-            auto offset = depth_pixel_index*other_bpp;
-            
-            if ((x>x_left) && (y>y_offset) && (x<(width-x_left-x_right)/3+x_left) && (y<(height-2*y_offset)/3+y_offset)) { // Top-left quadrant -- Feather 1
+    for (int j = 0; j < height; j=j+4) {
+        for (int i = 0; i < width; i=i+4) {
+
+            closest_pix = 10;
+
+            for (int y = 0; y < 4; y++) {
+                for (int x = 0; x < 4; x++) {
+                    depth_pixel_index = j*width + i + y*width + x;
+                    pixels_distance = depth_scale*p_depth_frame[depth_pixel_index];
+
+                    if (pixels_distance < closest_pix && pixels_distance != 0) {
+                        closest_pix = pixels_distance;
+                        y_angle = 43.5 - (i+x)*(float)(43.5/424);
+                        z_angle = 29.0 - (j+y)*(float)(29.0/240);
+
+                        if (y_angle < 0) { y_angle = -y_angle; }
+                        if (z_angle < 0) { z_angle = -z_angle; }
+                    }
+
+                }
+            }
+
+            mags = findMags(y_angle, z_angle, closest_pix);
+            x_mag = *(mags+0);
+            z_mag = *(mags+1);
+
+            if (x_mag > h_width/2 && z_mag > h_height/2) { pixels_distance = sqrt(pow(closest_pix,2) + pow(x_mag-h_width/2,2) + pow(z_mag-h_height/2,2)); }
+            else if (x_mag > h_width/2) { pixels_distance = sqrt(pow(closest_pix,2) + pow(x_mag-h_width/2,2)); }
+            else if (z_mag > h_height/2) { pixels_distance = sqrt(pow(closest_pix,2) + pow(z_mag-h_height/2,2)); }
+            else { pixels_distance = closest_pix; }
+
+            if ((i>x_left) && (j>y_offset) && (i<(width-x_left-x_right)/3+x_left) && (j<(height-2*y_offset)/3+y_offset)) { // Top-left quadrant -- Feather 1
                 if (pixels_distance < closest[0] && pixels_distance > .001){
                     closest[0] = pixels_distance;
                 }
-            } else if ((x>(width-x_left-x_right)/3+x_left) && (y>y_offset) && (x<2*(width-x_left-x_right)/3+x_left) && (y<(height-2*y_offset)/3+y_offset)) { // Top-middle quadrant -- Feather 2
+            } else if ((i>(width-x_left-x_right)/3+x_left) && (j>y_offset) && (i<2*(width-x_left-x_right)/3+x_left) && (j<(height-2*y_offset)/3+y_offset)) { // Top-middle quadrant -- Feather 2
                 if (pixels_distance < closest[1] && pixels_distance > .001){
                     closest[1] = pixels_distance;
                 }
-            } else if ((x>2*(width-x_left-x_right)/3+x_left) && (y>y_offset) && (x<width-x_right) && (y<(height-2*y_offset)/3+y_offset)) { // Top-right quadrant -- Feather 3
+            } else if ((i>2*(width-x_left-x_right)/3+x_left) && (j>y_offset) && (i<width-x_right) && (j<(height-2*y_offset)/3+y_offset)) { // Top-right quadrant -- Feather 3
                 if (pixels_distance < closest[2] && pixels_distance > .001){
                     closest[2] = pixels_distance;
                 }
-            } else if ((x>x_left) && (y>(height-2*y_offset)/3+y_offset) && (x<(width-x_left-x_right)/3+x_left) && (y<2*(height-2*y_offset)/3+y_offset)) { // Middle-left quadrant -- Feather 4
+            } else if ((i>x_left) && (j>(height-2*y_offset)/3+y_offset) && (i<(width-x_left-x_right)/3+x_left) && (j<2*(height-2*y_offset)/3+y_offset)) { // Middle-left quadrant -- Feather 4
                 if (pixels_distance < closest[3] && pixels_distance > .001){
                     closest[3] = pixels_distance;
                 }
-            } else if ((x>(width-x_left-x_right)/3+x_left) && (y>(height-2*y_offset)/3+y_offset) && (x<2*(width-x_left-x_right)/3+x_left) && (y<2*(height-2*y_offset)/3+y_offset)) { // Middle-middle quadrant -- Feather 5
+            } else if ((i>(width-x_left-x_right)/3+x_left) && (j>(height-2*y_offset)/3+y_offset) && (i<2*(width-x_left-x_right)/3+x_left) && (j<2*(height-2*y_offset)/3+y_offset)) { // Middle-middle quadrant -- Feather 5
                 if (pixels_distance < closest[4] && pixels_distance > .001){
                     closest[4] = pixels_distance;
                 }
-            } else if ((x>2*(width-x_left-x_right)/3+x_left) && (y>(height-2*y_offset)/3+y_offset) && (x<width-x_right) && (y<2*(height-2*y_offset)/3+y_offset)) { // Middle-right quadrant -- Feather 6
+            } else if ((i>2*(width-x_left-x_right)/3+x_left) && (j>(height-2*y_offset)/3+y_offset) && (i<width-x_right) && (j<2*(height-2*y_offset)/3+y_offset)) { // Middle-right quadrant -- Feather 6
                 if (pixels_distance < closest[5] && pixels_distance > .001){
                     closest[5] = pixels_distance;
                 }
-            } else if ((x>x_left) && (y>2*(height-2*y_offset)/3+y_offset) && (x<(width-x_left-x_right)/2+x_left) && (y<height-y_offset)) { // Bottom-left quadrant -- Feather 7 
+            } else if ((i>x_left) && (j>2*(height-2*y_offset)/3+y_offset) && (i<(width-x_left-x_right)/2+x_left) && (j<height-y_offset)) { // Bottom-left quadrant -- Feather 7
                 if (pixels_distance < closest[6] && pixels_distance > .001){
                     closest[6] = pixels_distance;
                 }
-            } else if ((x>(width-x_left-x_right)/2+x_left) && (y>2*(height-2*y_offset)/3+y_offset) && (x<width-x_right) && (y<height-y_offset)) { // Bottom-right quadrant -- Feather 8 
+            } else if ((i>(width-x_left-x_right)/2+x_left) && (j>2*(height-2*y_offset)/3+y_offset) && (i<width-x_right) && (j<height-y_offset)) { // Bottom-right quadrant -- Feather 8
                 if (pixels_distance < closest[7] && pixels_distance > .001){
                     closest[7] = pixels_distance;
                 }
@@ -453,6 +483,19 @@ int* printPixelDepth(rs2::video_frame& other_frame, const rs2::depth_frame& dept
 	}    
     
     return color;
+}
+
+float* findMags(float y_angle, float z_angle, float pixel_dist) {
+    float x, z;
+    static float a[2] = {};
+
+    z = pixel_dist*tan(z_angle*PI/180);
+    x = pixel_dist*tan(y_angle*PI/180);
+
+    a[0] = x;
+    a[1] = z;
+
+    return a;
 }
 
 float get_depth_scale(rs2::device dev)
