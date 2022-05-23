@@ -369,7 +369,7 @@ int* printPixelDepth(rs2::video_frame& other_frame, const rs2::depth_frame& dept
     // converting physical distance to 0-255 scale
     for(int i=0; i<=7; i++) {
         std::cout << "feather: " << i+1 << " distance: " << closest[i] << std::endl;
-        closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(2.0-.001));
+        closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(1.413-.001));
         closest[i] = trunc(closest[i]);
         //std::cout << " scaled: " << closest[i] << std::endl;
     }
