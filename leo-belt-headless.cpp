@@ -100,11 +100,12 @@ int main(int argc, char * argv[]) try
     auto start = std::chrono::high_resolution_clock::now();
     int duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     std::time_t start_time = std::chrono::system_clock::to_time_t(start);
+    int minute = 0;
     
     std::ofstream out("/home/pi/leo_belt/log.txt", std::ios::app);
     std::cout.rdbuf(out.rdbuf());
 
-    std::cout << "Program start: " << std::ctime(&start_time) << std::endl;
+    std::cout << "\nProgram start: " << std::ctime(&start_time);
 
     while (true) // Application still alive?
     {
@@ -139,10 +140,9 @@ int main(int argc, char * argv[]) try
         duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now()-start).count();
 
         if (duration%60 == 0) {
-            if (getFrame > 100) {
-                std::cout << "fps: ";
-                std::cout << getFrame / 60 << std::endl;
-
+            if (getFrame > 70) {
+                minute++;
+                std::cout << "minute: " << minute << " fps: " << getFrame / 60 << std::endl;
                 getFrame = 0;
             }
         }
