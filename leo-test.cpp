@@ -107,7 +107,7 @@ int main(int argc, char * argv[]) try
 
     std::cout << "\nProgram start: " << std::ctime(&start_time);
 
-    while (true) // Application still alive?
+    while (getFrame < 500) // Application still alive?
     {
         try {
             // Using the align object, we block the application until a frameset is available
