@@ -12,6 +12,11 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
+int level;
+int count;
+unsigned long t = micros();
+unsigned long t1;
+
 // REPLACE WITH YOUR ESP RECEIVER'S MAC ADDRESS
 uint8_t broadcastAddress1[] = {0x4C, 0x11, 0xAE, 0x77, 0xA2, 0x74};
 uint8_t broadcastAddress2[] = {0x24, 0x6F, 0x28, 0xA4, 0x49, 0xB8};
@@ -21,14 +26,27 @@ uint8_t broadcastAddress5[] = {0x24, 0x6F, 0x28, 0xA6, 0x8B, 0x94};
 uint8_t broadcastAddress6[] = {0x4C, 0x11, 0xAE, 0x76, 0x8B, 0xAC};
 uint8_t broadcastAddress7[] = {0x24, 0x6F, 0x28, 0xA2, 0xDE, 0x64};
 uint8_t broadcastAddress8[] = {0x24, 0x6F, 0x28, 0x1E, 0x01, 0xC4};
-esp_err_t result;
+esp_err_t result1;
+esp_err_t result2;
+esp_err_t result3;
+esp_err_t result4;
+esp_err_t result5;
+esp_err_t result6;
+esp_err_t result7;
+esp_err_t result8;
 
 typedef struct test_struct {
   char intensity;
-  int y;
 } test_struct;
 
-test_struct test;
+test_struct f1;
+test_struct f2;
+test_struct f3;
+test_struct f4;
+test_struct f5;
+test_struct f6;
+test_struct f7;
+test_struct f8;
 
 // callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
@@ -42,60 +60,116 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
-// Send message just to feather 1
-void sendFeather1(){
-    esp_err_t result = esp_now_send(broadcastAddress1, (uint8_t *) &test, sizeof(test_struct));
-    Serial.write("Sent feather 1. Intensity: ");
-    Serial.write(test.intensity);
+// Send message to all feathers
+void sendFeathers(){
+    // Feather 1
+    result1 = esp_now_send(broadcastAddress1, (uint8_t *) &f1, sizeof(test_struct));
+    if (result1 == 0) {
+      Serial.print("\n1");
+    }
+    else {
+      while (result1 != 0) {
+        result1 = esp_now_send(broadcastAddress1, (uint8_t *) &f1, sizeof(test_struct));
+      }
+      Serial.print("\n1");
+    }
+
+    // Feather 2
+    result2 = esp_now_send(broadcastAddress2, (uint8_t *) &f2, sizeof(test_struct));
+    if (result2 == 0) {
+      Serial.print("\n2");
+    }
+    else {
+      while (result2 != 0) {
+        result2 = esp_now_send(broadcastAddress2, (uint8_t *) &f2, sizeof(test_struct));
+      }
+      Serial.print("\n2");
+    }
+
+    // Feather 3
+    result3 = esp_now_send(broadcastAddress3, (uint8_t *) &f3, sizeof(test_struct));
+    if (result3 == 0) {
+      Serial.print("\n3");
+    }
+    else {
+      while (result3 != 0) {
+        result3 = esp_now_send(broadcastAddress3, (uint8_t *) &f3, sizeof(test_struct));
+      }
+      Serial.print("\n3");
+    }
+
+    // Feather 4
+    result4 = esp_now_send(broadcastAddress4, (uint8_t *) &f4, sizeof(test_struct));
+    if (result4 == 0) {
+      Serial.print("\n4");
+    }
+    else {
+      while (result4 != 0) {
+        result4 = esp_now_send(broadcastAddress4, (uint8_t *) &f4, sizeof(test_struct));
+      }
+      Serial.print("\n4");
+    }
+
+    // Feather 5
+    result5 = esp_now_send(broadcastAddress5, (uint8_t *) &f5, sizeof(test_struct));
+    if (result5 == 0) {
+      Serial.print("\n5");
+    }
+    else {
+      while (result5 != 0) {
+        result5 = esp_now_send(broadcastAddress5, (uint8_t *) &f5, sizeof(test_struct));
+      }
+      Serial.print("\n5");
+    }
+
+    // Feather 6
+    result6 = esp_now_send(broadcastAddress6, (uint8_t *) &f6, sizeof(test_struct));
+    if (result6 == 0) {
+      Serial.print("\n6");
+    }
+    else {
+      while (result6 != 0) {
+        result6 = esp_now_send(broadcastAddress6, (uint8_t *) &f6, sizeof(test_struct));
+      }
+      Serial.print("\n6");
+    }
+
+    // Feather 7
+    result7 = esp_now_send(broadcastAddress7, (uint8_t *) &f7, sizeof(test_struct));
+    if (result7 == 0) {
+      Serial.print("\n7");
+    }
+    else {
+      while (result7 != 0) {
+        result7 = esp_now_send(broadcastAddress7, (uint8_t *) &f7, sizeof(test_struct));
+      }
+      Serial.print("\n7");
+    }
+
+    // Feather 8
+    result8 = esp_now_send(broadcastAddress8, (uint8_t *) &f8, sizeof(test_struct));
+    if (result8 == 0) {
+      Serial.print("\n8");
+    }
+    else {
+      while (result8 != 0) {
+        result8 = esp_now_send(broadcastAddress8, (uint8_t *) &f8, sizeof(test_struct));
+      }
+      Serial.print("\n8");
+    }
 }
 
-// Send message just to feather 2
-void sendFeather2(){
-    esp_err_t result = esp_now_send(broadcastAddress2, (uint8_t *) &test, sizeof(test_struct));
-    Serial.write("Sent feather 2. Intensity: ");
-    Serial.write(test.intensity);
-}
 
-// Send message just to feather 3
-void sendFeather3(){
-    esp_err_t result = esp_now_send(broadcastAddress3, (uint8_t *) &test, sizeof(test_struct));
-    Serial.write("Sent feather 3. Intensity: ");
-    Serial.write(test.intensity);
-}
-
-// Send message just to feather 4
-void sendFeather4(){
-    esp_err_t result = esp_now_send(broadcastAddress4, (uint8_t *) &test, sizeof(test_struct));
-    Serial.write("Sent feather 4. Intensity: ");
-    Serial.write(test.intensity);
-}
-
-// Send message just to feather 5
-void sendFeather5(){
-    esp_err_t result = esp_now_send(broadcastAddress5, (uint8_t *) &test, sizeof(test_struct));
-    Serial.write("Sent feather 5. Intensity: ");
-    Serial.write(test.intensity);
-}
-
-// Send message just to feather 6
-void sendFeather6(){
-    esp_err_t result = esp_now_send(broadcastAddress6, (uint8_t *) &test, sizeof(test_struct));
-    Serial.write("Sent feather 6. Intensity: ");
-    Serial.write(test.intensity);
-}
-
-// Send message just to feather 7
-void sendFeather7(){
-    esp_err_t result = esp_now_send(broadcastAddress7, (uint8_t *) &test, sizeof(test_struct));
-    Serial.write("Sent feather 7. Intensity: ");
-    Serial.write(test.intensity);
-}
-
-// Send message just to feather 8
-void sendFeather8(){
-    esp_err_t result = esp_now_send(broadcastAddress8, (uint8_t *) &test, sizeof(test_struct));
-    Serial.write("Sent feather 8. Intensity: ");
-    Serial.write(test.intensity);
+void silenceFeathers() {
+  f1.intensity = 0;
+  f2.intensity = 0;
+  f3.intensity = 0;
+  f4.intensity = 0;
+  f5.intensity = 0;
+  f6.intensity = 0;
+  f7.intensity = 0;
+  f8.intensity = 0;
+  sendFeathers();
 }
  
 void setup() {
@@ -173,161 +247,155 @@ void setup() {
 }
  
 void loop() {
-  test.y = random(0,20);
-
-  delay(4); // 30 fps/8 feathers = loop should run every ~4 ms
   while (Serial.available() > 0) { // if any data available
     char incomingByte = Serial.read(); // read byte0
+    t1 = micros();
     if (incomingByte == 49) { // Feather 1
-      sendFeather1();
+      f1.intensity = level;
+      Serial.print("\n1");
     } else if (incomingByte == 50) { // Feather 2
-      sendFeather2();
+      f2.intensity = level;
+      Serial.print("\n2");
     } else if (incomingByte == 51) { // Feather 3
-      sendFeather3();
+      f3.intensity = level;
+      Serial.print("\n3");
     } else if (incomingByte == 52) { // Feather 4
-      sendFeather4();
+      f4.intensity = level;
+      Serial.print("\n4");
     } else if (incomingByte == 53) { // Feather 5
-      sendFeather5();
+      f5.intensity = level;
+      Serial.print("\n5");
     } else if (incomingByte == 54) { // Feather 6
-      sendFeather6();
+      f6.intensity = level;
+      Serial.print("\n6");
     } else if (incomingByte == 55) { // Feather 7
-      sendFeather7();
+      f7.intensity = level;
+      Serial.print("\n7");
     } else if (incomingByte == 56) { // Feather 8
-      sendFeather8();
+      f8.intensity = level;
+      Serial.print("\n8");
+      sendFeathers();
     } else { // Intensity of vibration -- 5 levels of offset
         if (incomingByte == 35) { // #
-          test.intensity = test.intensity;
+          level = level;
         } else if (incomingByte == 36) { // $
-          test.intensity = test.intensity + 52;
+          level = level + 52;
         } else if (incomingByte == 37) { // %
-          test.intensity = test.intensity + 104;
+          level = level + 104;
         } else if (incomingByte == 38) { // &
-          test.intensity = test.intensity + 156;
+          level = level + 156;
         } else if (incomingByte == 39) { // '
-          test.intensity = test.intensity + 208;
+          level = level + 208;
         } else { // Intensity of vibration -- 52 levels
             if (incomingByte == 65) { // A 
-              test.intensity = 0;
+              level = 0;
             } else if (incomingByte == 66) { // B
-              test.intensity = 1;
+              level = 1;
             } else if (incomingByte == 67) { // C
-              test.intensity = 2;
+              level = 2;
             } else if (incomingByte == 68) { // D
-              test.intensity = 3;
+              level = 3;
             } else if (incomingByte == 69) { // E
-              test.intensity = 4;
+              level = 4;
             } else if (incomingByte == 70) { // F
-              test.intensity = 5;
+              level = 5;
             } else if (incomingByte == 71) { // G
-              test.intensity = 6;
+              level = 6;
             } else if (incomingByte == 72) { // H
-              test.intensity = 7;
+              level = 7;
             } else if (incomingByte == 73) { // I
-              test.intensity = 8;
+              level = 8;
             } else if (incomingByte == 74) { // J
-              test.intensity = 9;
+              level = 9;
             } else if (incomingByte == 75) { // K
-              test.intensity = 10;
+              level = 10;
             } else if (incomingByte == 76) { // L
-              test.intensity = 11;
+              level = 11;
             } else if (incomingByte == 77) { // M 
-              test.intensity = 12;
+              level = 12;
             } else if (incomingByte == 78) { // N
-              test.intensity = 13;
+              level = 13;
             } else if (incomingByte == 79) { // O
-              test.intensity = 14;
+              level = 14;
             } else if (incomingByte == 80) { // P
-              test.intensity = 15;
+              level = 15;
             } else if (incomingByte == 81) { // Q 
-              test.intensity = 16;
+              level = 16;
             } else if (incomingByte == 82) { // R
-              test.intensity = 17;
+              level = 17;
             } else if (incomingByte == 83) { // S
-              test.intensity = 18;
+              level = 18;
             } else if (incomingByte == 84) { // T
-              test.intensity = 19;
+              level = 19;
             } else if (incomingByte == 85) { // U
-              test.intensity = 20;
+              level = 20;
             } else if (incomingByte == 86) { // V
-              test.intensity = 21;
+              level = 21;
             } else if (incomingByte == 87) { // W 
-              test.intensity = 22;
+              level = 22;
             } else if (incomingByte == 88) { // X
-              test.intensity = 23;
+              level = 23;
             } else if (incomingByte == 89) { // Y
-              test.intensity = 24;
+              level = 24;
             } else if (incomingByte == 90) { // Z
-              test.intensity = 25;
+              level = 25;
             } else if (incomingByte == 97) { // a
-              test.intensity = 26;
+              level = 26;
             } else if (incomingByte == 98) { // b
-              test.intensity = 27;
+              level = 27;
             } else if (incomingByte == 99) { // c
-              test.intensity = 28;
+              level = 28;
             } else if (incomingByte == 100) { // d
-              test.intensity = 29;
+              level = 29;
             } else if (incomingByte == 101) { // e 
-              test.intensity = 30;
+              level = 30;
             } else if (incomingByte == 102) { // f
-              test.intensity = 31;
+              level = 31;
             } else if (incomingByte == 103) { // g
-              test.intensity = 32;
+              level = 32;
             } else if (incomingByte == 104) { // h
-              test.intensity = 33;
+              level = 33;
             } else if (incomingByte == 105) { // i
-              test.intensity = 34;
+              level = 34;
             } else if (incomingByte == 106) { // j
-              test.intensity = 35;
+              level = 35;
             } else if (incomingByte == 107) { // k
-              test.intensity = 36;
+              level = 36;
             } else if (incomingByte == 108) { // l
-              test.intensity = 37;
+              level = 37;
             } else if (incomingByte == 109) { // m
-              test.intensity = 38;
+              level = 38;
             } else if (incomingByte == 110) { // n
-              test.intensity = 39;
+              level = 39;
             } else if (incomingByte == 111) { // o 
-              test.intensity = 40;
+              level = 40;
             } else if (incomingByte == 112) { // p
-              test.intensity = 41;
+              level = 41;
             } else if (incomingByte == 113) { // q
-              test.intensity = 42;
+              level = 42;
             } else if (incomingByte == 114) { // r
-              test.intensity = 43;
+              level = 43;
             } else if (incomingByte == 115) { // s
-              test.intensity = 44;
+              level = 44;
             } else if (incomingByte == 116) { // t
-              test.intensity = 45;
+              level = 45;
             } else if (incomingByte == 117) { // u
-              test.intensity = 46;
+              level = 46;
             } else if (incomingByte == 118) { // v
-              test.intensity = 47;
+              level = 47;
             } else if (incomingByte == 119) { // w
-              test.intensity = 48;
+              level = 48;
             } else if (incomingByte == 120) { // x
-              test.intensity = 49;
+              level = 49;
             } else if (incomingByte == 121) { // y 
-              test.intensity = 50;
+              level = 50;
             } else if (incomingByte == 122) { // z
-              test.intensity = 51;
+              level = 51;
             }
         }
     }
-
-    if (Serial.available() == 0) {
-      delay(1000);
-      if (Serial.available() == 0) {
-        test.intensity = 0;
-        sendFeather1();
-        sendFeather2();
-        sendFeather3();
-        sendFeather4();
-        sendFeather5();
-        sendFeather6();
-        sendFeather7();
-        sendFeather8();
-      }
-    }
-    //Serial.write(incomingByte); // send it back
   }
+  t = micros() - t1;
+  t = (float) t/1000;
+  if (t > 5000) {silenceFeathers();}
 }
