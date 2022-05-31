@@ -71,17 +71,17 @@ int main(int argc, char * argv[]) try
     }
 
     if(RS232_OpenComport(cport_nr1_4, bdrate, mode)) {
-        printf("Can not open comport\n");
+        printf("Can not open comport master 1\n");
         //return(0);
     }
     if(RS232_OpenComport(cport_nr5_8, bdrate, mode)) {
-        printf("Can not open comport\n");
+        printf("Can not open comport master 2\n");
         //return(0);
     }
 
     // Create a pipeline to easily configure and start the camera
     rs2::config cfg;
-    cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 60);
+    cfg.enable_stream(RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_ANY, 30);
     rs2::pipeline pipe;
 
     //The start function returns the pipeline profile which the pipeline used to start the device
