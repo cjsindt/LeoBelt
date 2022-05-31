@@ -23,8 +23,7 @@
 
 #define BUF_SIZE 123
 char str_send[2048][BUF_SIZE]; // send data buffer
-int cport_nr1_4 = 16;
-int cport_nr5_8 = 17;
+int cport_nr = 16;
 float h_height = 1.7;
 float h_width = .5;
 int getFrame = 0;
@@ -70,11 +69,11 @@ int main(int argc, char * argv[]) try
         }
     }
 
-    if(RS232_OpenComport(cport_nr1_4, bdrate, mode)) {
+    if(RS232_OpenComport(cport_nr, bdrate, mode)) {
         printf("Can not open comport master 1\n");
         //return(0);
     }
-    if(RS232_OpenComport(cport_nr5_8, bdrate, mode)) {
+    if(RS232_OpenComport(cport_nr, bdrate, mode)) {
         printf("Can not open comport master 2\n");
         //return(0);
     }
@@ -158,14 +157,14 @@ catch (const std::exception & e)
 }
 
 void silenceAllFeathers(){
-    RS232_cputs(cport_nr1_4, str_send[0]);
-    RS232_cputs(cport_nr1_4, str_send[256]);
-    RS232_cputs(cport_nr1_4, str_send[2*256]);
-    RS232_cputs(cport_nr1_4, str_send[3*256]);
-    RS232_cputs(cport_nr5_8, str_send[4*256]);
-    RS232_cputs(cport_nr5_8, str_send[5*256]);
-    RS232_cputs(cport_nr5_8, str_send[6*256]);
-    RS232_cputs(cport_nr5_8, str_send[7*256]);
+    RS232_cputs(cport_nr, str_send[0]);
+    RS232_cputs(cport_nr, str_send[256]);
+    RS232_cputs(cport_nr, str_send[2*256]);
+    RS232_cputs(cport_nr, str_send[3*256]);
+    RS232_cputs(cport_nr, str_send[4*256]);
+    RS232_cputs(cport_nr, str_send[5*256]);
+    RS232_cputs(cport_nr, str_send[6*256]);
+    RS232_cputs(cport_nr, str_send[7*256]);
 }
 
 int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
@@ -276,73 +275,73 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
     //Feather 1
     if(closest[0] <= 255 && closest[0] >= 0) {
         int n = closest[0];
-        RS232_cputs(cport_nr1_4, str_send[n]);
+        RS232_cputs(cport_nr, str_send[n]);
     }
     else {
-        RS232_cputs(cport_nr1_4, str_send[0]);
+        RS232_cputs(cport_nr, str_send[0]);
     }
 
     //Feather 2
     if(closest[1] <= 255 && closest[1] >= 0) {
         int n = closest[1] + 256;
-        RS232_cputs(cport_nr1_4, str_send[n]);
+        RS232_cputs(cport_nr, str_send[n]);
     }
     else {
-        RS232_cputs(cport_nr1_4, str_send[0+256]);
+        RS232_cputs(cport_nr, str_send[0+256]);
     }
 
     //Feather 3
     if(closest[2] <= 255 && closest[2] >= 0) {
         int n = closest[2] + 2*256;
-        RS232_cputs(cport_nr1_4, str_send[n]);
+        RS232_cputs(cport_nr, str_send[n]);
     }
     else {
-        RS232_cputs(cport_nr1_4, str_send[0+(2*256)]);
+        RS232_cputs(cport_nr, str_send[0+(2*256)]);
     }
 
     //Feather 4
     if(closest[3] <= 255 && closest[3] >= 0) {
         int n = closest[3] + 3*256;
-        RS232_cputs(cport_nr1_4, str_send[n]);
+        RS232_cputs(cport_nr, str_send[n]);
     }
     else {
-        RS232_cputs(cport_nr1_4, str_send[0+(3*256)]);
+        RS232_cputs(cport_nr, str_send[0+(3*256)]);
     }
 
     //Feather 5
     if(closest[4] <= 255 && closest[4] >= 0) {
         int n = closest[4] + 4*256;
-        RS232_cputs(cport_nr5_8, str_send[n]);
+        RS232_cputs(cport_nr, str_send[n]);
     }
     else {
-        RS232_cputs(cport_nr5_8, str_send[0+(4*256)]);
+        RS232_cputs(cport_nr, str_send[0+(4*256)]);
     }
 
     //Feather 6
     if(closest[5] <= 255 && closest[5] >= 0) {
         int n = closest[5] + 5*256;
-        RS232_cputs(cport_nr5_8, str_send[n]);
+        RS232_cputs(cport_nr, str_send[n]);
     }
     else {
-        RS232_cputs(cport_nr5_8, str_send[0+(5*256)]);
+        RS232_cputs(cport_nr, str_send[0+(5*256)]);
     }
 
     //Feather 7
     if(closest[6] <= 255 && closest[6] >= 0) {
         int n = closest[6] + 6*256;
-        RS232_cputs(cport_nr5_8, str_send[n]);
+        RS232_cputs(cport_nr, str_send[n]);
     }
     else {
-        RS232_cputs(cport_nr5_8, str_send[0+(6*256)]);
+        RS232_cputs(cport_nr, str_send[0+(6*256)]);
     }
 
     //Feather 8
     if(closest[7] <= 255 && closest[7] >= 0) {
         int n = closest[7] + 7*256;
-        RS232_cputs(cport_nr5_8, str_send[n]);
+        RS232_cputs(cport_nr, str_send[n]);
     }
     else {
-        RS232_cputs(cport_nr5_8, str_send[0+(7*256)]);
+        RS232_cputs(cport_nr, str_send[0+(7*256)]);
     }
 
     return color;
@@ -428,12 +427,12 @@ bool profile_changed(const std::vector<rs2::stream_profile>& current, const std:
 // button to "test" the feathers. sets all feather output to max intensity on one press
 // and to zero upon following press
 void testButton() {
-    RS232_cputs(cport_nr1_4, str_send[255]);
-    RS232_cputs(cport_nr1_4, str_send[255+256]);
-    RS232_cputs(cport_nr1_4, str_send[255+2*256]);
-    RS232_cputs(cport_nr1_4, str_send[255+3*256]);
-    RS232_cputs(cport_nr5_8, str_send[255+4*256]);
-    RS232_cputs(cport_nr5_8, str_send[255+5*256]);
-    RS232_cputs(cport_nr5_8, str_send[255+6*256]);
-    RS232_cputs(cport_nr5_8, str_send[255+7*256]);
+    RS232_cputs(cport_nr, str_send[255]);
+    RS232_cputs(cport_nr, str_send[255+256]);
+    RS232_cputs(cport_nr, str_send[255+2*256]);
+    RS232_cputs(cport_nr, str_send[255+3*256]);
+    RS232_cputs(cport_nr, str_send[255+4*256]);
+    RS232_cputs(cport_nr, str_send[255+5*256]);
+    RS232_cputs(cport_nr, str_send[255+6*256]);
+    RS232_cputs(cport_nr, str_send[255+7*256]);
 }
