@@ -94,10 +94,10 @@ int main(int argc, char * argv[]) try
     std::time_t start_time = std::chrono::system_clock::to_time_t(start);
     int minute = 0;
 
-    std::ofstream out("/home/pi/leo_belt/log.txt", std::ios::app);
+    std::ofstream out("/home/pi/LeoBelt/log.txt", std::ios::app);
     std::cout.rdbuf(out.rdbuf());
 
-    std::cout << "\nProgram start: " << std::ctime(&start_time);
+    std::cout << "\nProgram start (test): " << std::ctime(&start_time);
 
     while (true) // Application still alive?
     {
