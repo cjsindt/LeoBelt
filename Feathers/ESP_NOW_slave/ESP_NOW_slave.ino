@@ -12,11 +12,18 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
+unsigned long t = micros();
+unsigned long t1;
+const int order = 10;
+unsigned int val[order];
+float sum = 0;
+float avg;
+int i;
+
 //Structure example to receive data
 //Must match the sender structure
 typedef struct test_struct {
   int intensity;
-  int y;
 } test_struct;
 
 //Create a struct_message called myData
@@ -24,26 +31,29 @@ test_struct myData;
 
 //callback function that will be executed when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-  memcpy(&myData, incomingData, sizeof(myData));    
-    sigmaDeltaWrite(0, myData.intensity);
-    //digitalWrite(LED_BUILTIN,HIGH);
-    /*
-    Serial.print("Bytes received: ");
-    Serial.println(len);
-    Serial.print("x: ");
-    Serial.println(myData.x);
-    Serial.print("y: ");
-    Serial.println(myData.y);
-    Serial.println();
-    */
-    //digitalWrite(LED_BUILTIN,LOW);
-    //sigmaDeltaWrite(0, 0);
+  memcpy(&myData, incomingData, sizeof(myData));
+  sigmaDeltaWrite(0, myData.intensity);
+  
+  t1 = micros() - t;
+  val[i] = (float) t1/1000;
+  sum += val[i++];
+  i = i%order;
+  
+  avg = (float)sum/order;
+  sum -= val[i];
+  Serial.print(avg);
+  Serial.print("\n");
+  
+  sigmaDeltaWrite(0, myData.intensity);
+  Serial.print("\ntime: ");
+  t = micros();
 }
  
 void setup() {
   sigmaDeltaSetup(0, 312500);
   sigmaDeltaAttachPin(A1, 0);
   sigmaDeltaWrite(0, 0);
+  
   //Initialize Serial Monitor
   Serial.begin(57600);
   
@@ -51,11 +61,15 @@ void setup() {
   WiFi.mode(WIFI_STA);
 
   pinMode(LED_BUILTIN, OUTPUT);
-
+  
   //Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return;
+  }
+  
+  for (i = 0; i < order - 1; i++) {
+    val[i] = 0;
   }
   
   // Once ESPNow is successfully Init, we will register for recv CB to
