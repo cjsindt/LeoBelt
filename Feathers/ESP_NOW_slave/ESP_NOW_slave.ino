@@ -14,11 +14,13 @@
 
 unsigned long t = micros();
 unsigned long t1;
-const int order = 10;
+const int order = 100;
 unsigned int val[order];
 float sum = 0;
 float avg;
 int i;
+int count = 0;
+int cutoff = 34.5;
 
 //Structure example to receive data
 //Must match the sender structure
@@ -40,6 +42,25 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   i = i%order;
   
   avg = (float)sum/order;
+  if (avg > cutoff) { count++; }
+  if (count > 90) {
+     for (int j = 0; j < 20; j++) {
+       sigmaDeltaWrite(0, 255);
+       delay(300);
+       sigmaDeltaWrite(0, 0);
+       delay(100);
+     }
+
+     if (cutoff == 34.5) { cutoff = 55; }
+     else if (cutoff == 55) { cutoff = 80; }
+     else if (cutoff == 80) { cutoff = 105; }
+     else if (cutoff == 105) { cutoff = 130; }
+     else if (cutoff == 130) { cutoff = 155; }
+     else if (cutoff == 155) { cutoff = 185; }
+
+     count = 0;
+  }
+  
   sum -= val[i];
   Serial.print(avg);
   Serial.print("\n");
