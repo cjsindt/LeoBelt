@@ -63,10 +63,8 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 
   // Obtain mac address of sender
   char macStr[18];
-  Serial.print("Mac Address of sender: ");
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  Serial.println(macStr);
 
   // Activate feathers that send back
   if (strcmp(macStr, bA1) == 0) { f1.active = true; }
@@ -154,6 +152,7 @@ void sendFeathers(){
     }
 
     // Check every 100 frames (~3 sec) to see if feather is still active/reactivated
+    count++;
     if (count%100 == 0) {
       f1.respond = 0; f1.active = true;
       f2.respond = 0; f2.active = true;
@@ -174,55 +173,6 @@ void sendFeathers(){
       f7.respond = 1;
       f8.respond = 1;
     }
-
-    /*if(!f1.active) {
-      if (!f1.warned) {
-        alert();
-        f1.warned = true;
-      }
-    }
-    else if(!f2.active) {
-      if (!f2.warned) {
-        alert();
-        f2.warned = true;
-      }
-    }
-    else if(!f3.active) {
-      if (!f3.warned) {
-        alert();
-        f3.warned = true;
-      }
-    }
-    else if(!f4.active) {
-      if (!f4.warned) {
-        alert();
-        f4.warned = true;
-      }
-    }
-    else if(!f5.active) {
-      if (!f5.warned) {
-        alert();
-        f5.warned = true;
-      }
-    }
-    else if(!f6.active) {
-      if (!f6.warned) {
-        alert();
-        f6.warned = true;
-      }
-    }
-    else if(!f7.active) {
-      if (!f7.warned) {
-        alert();
-        f7.warned = true;
-      }
-    }
-    else if(!f8.active) {
-      if (!f8.warned) {
-        alert();
-        f8.warned = true;
-      }
-    }*/
 }
 
 void alert() {

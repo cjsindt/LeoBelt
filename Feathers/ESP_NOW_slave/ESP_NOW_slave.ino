@@ -12,6 +12,7 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
+//REPLACE WITH THE MAC ADDRESS OF THE MASTER FEATHER
 uint8_t broadcastAddressMaster[] = {0x3C, 0x61, 0x05, 0x4A, 0xF7, 0x6C};
 esp_err_t result;
 
@@ -45,17 +46,14 @@ test_struct myData;
 //callback function that will be executed when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&myData, incomingData, sizeof(myData));
-  sendMessage.received = true;
+
   
   if (myData.respond == 0) {
     result = esp_now_send(broadcastAddressMaster, (uint8_t *) &sendMessage, sizeof(response));
     while (result != 0) {
       result = esp_now_send(broadcastAddressMaster, (uint8_t *) &sendMessage, sizeof(response));
     }
-
   }
-  
-  sigmaDeltaWrite(0, myData.intensity);
   
   t1 = micros() - t;
   val[i] = (float) t1/1000;
@@ -82,6 +80,8 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   Serial.print("\ntime: ");
   sum -= val[i];
   Serial.print(avg);
+  Serial.print("\nintensity: ");
+  Serial.print(myData.intensity);
   
   t = micros();
 }
