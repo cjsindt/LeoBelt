@@ -13,7 +13,7 @@
 #include <WiFi.h>
 
 int level;
-int count;
+int count = 0;
 unsigned long t = micros();
 unsigned long t1;
 
@@ -26,19 +26,23 @@ uint8_t broadcastAddress5[] = {0x24, 0x6F, 0x28, 0xA6, 0x8B, 0x94};
 uint8_t broadcastAddress6[] = {0x4C, 0x11, 0xAE, 0x76, 0x8B, 0xAC};
 uint8_t broadcastAddress7[] = {0x24, 0x6F, 0x28, 0xA2, 0xDE, 0x64};
 uint8_t broadcastAddress8[] = {0x24, 0x6F, 0x28, 0x1E, 0x01, 0xC4};
-esp_err_t result1;
-esp_err_t result2;
-esp_err_t result3;
-esp_err_t result4;
-esp_err_t result5;
-esp_err_t result6;
-esp_err_t result7;
-esp_err_t result8;
+// Mac Address character arrays
+char bA1[18];
+char bA2[18];
+char bA3[18];
+char bA4[18];
+char bA5[18];
+char bA6[18];
+char bA7[18];
+char bA8[18];
 
 typedef struct test_struct {
   char intensity;
+  int respond;
+  esp_err_t result;
+  bool active = true;
+  bool warned = false;
 } test_struct;
-
 test_struct f1;
 test_struct f2;
 test_struct f3;
@@ -48,117 +52,145 @@ test_struct f6;
 test_struct f7;
 test_struct f8;
 
-// callback when data is sent
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+typedef struct response {
+  bool received;
+} response;
+response receiveMessage;
+
+// Callback when data is received
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+  memcpy(&receiveMessage, incomingData, sizeof(receiveMessage));
+
+  // Obtain mac address of sender
   char macStr[18];
-  //Serial.print("Packet to: ");
-  // Copies the sender mac address to a string
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-           mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  //Serial.print(macStr);
-  //Serial.print(" send status:\t");
-  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+  // Activate feathers that send back
+  if (strcmp(macStr, bA1) == 0) { f1.active = true; }
+  else if (strcmp(macStr, bA2) == 0) { f2.active = true; }
+  else if (strcmp(macStr, bA3) == 0) { f3.active = true; }
+  else if (strcmp(macStr, bA4) == 0) { f4.active = true; }
+  else if (strcmp(macStr, bA5) == 0) { f5.active = true; }
+  else if (strcmp(macStr, bA6) == 0) { f6.active = true; }
+  else if (strcmp(macStr, bA7) == 0) { f7.active = true; }
+  else if (strcmp(macStr, bA8) == 0) { f8.active = true; }
 }
 
 // Send message to all feathers
 void sendFeathers(){
     // Feather 1
-    result1 = esp_now_send(broadcastAddress1, (uint8_t *) &f1, sizeof(test_struct));
-    if (result1 == 0) {
-      Serial.print("\n1");
-    }
-    else {
-      while (result1 != 0) {
-        result1 = esp_now_send(broadcastAddress1, (uint8_t *) &f1, sizeof(test_struct));
+    if (f1.active) {
+      if (f1.respond == 0) { f1.active = false; }
+      f1.result = esp_now_send(broadcastAddress1, (uint8_t *) &f1, sizeof(test_struct));
+      while (f1.result != 0) {
+        f1.result = esp_now_send(broadcastAddress1, (uint8_t *) &f1, sizeof(test_struct));
       }
-      Serial.print("\n1");
     }
 
     // Feather 2
-    result2 = esp_now_send(broadcastAddress2, (uint8_t *) &f2, sizeof(test_struct));
-    if (result2 == 0) {
-      Serial.print("\n2");
-    }
-    else {
-      while (result2 != 0) {
-        result2 = esp_now_send(broadcastAddress2, (uint8_t *) &f2, sizeof(test_struct));
+    if (f2.active) {
+      if (f2.respond == 0) { f2.active = false; }
+      f2.result = esp_now_send(broadcastAddress2, (uint8_t *) &f2, sizeof(test_struct));
+      while (f2.result != 0) {
+        f2.result = esp_now_send(broadcastAddress2, (uint8_t *) &f2, sizeof(test_struct));
       }
-      Serial.print("\n2");
     }
 
     // Feather 3
-    result3 = esp_now_send(broadcastAddress3, (uint8_t *) &f3, sizeof(test_struct));
-    if (result3 == 0) {
-      Serial.print("\n3");
-    }
-    else {
-      while (result3 != 0) {
-        result3 = esp_now_send(broadcastAddress3, (uint8_t *) &f3, sizeof(test_struct));
+    if (f3.active) {
+      if (f3.respond == 0) { f3.active = false; }
+      f3.result = esp_now_send(broadcastAddress3, (uint8_t *) &f3, sizeof(test_struct));
+      while (f3.result != 0) {
+        f3.result = esp_now_send(broadcastAddress3, (uint8_t *) &f3, sizeof(test_struct));
       }
-      Serial.print("\n3");
     }
 
     // Feather 4
-    result4 = esp_now_send(broadcastAddress4, (uint8_t *) &f4, sizeof(test_struct));
-    if (result4 == 0) {
-      Serial.print("\n4");
-    }
-    else {
-      while (result4 != 0) {
-        result4 = esp_now_send(broadcastAddress4, (uint8_t *) &f4, sizeof(test_struct));
+    if (f4.active) {
+      if (f4.respond == 0) { f4.active = false; }
+      f4.result = esp_now_send(broadcastAddress4, (uint8_t *) &f4, sizeof(test_struct));
+      while (f4.result != 0) {
+        f4.result = esp_now_send(broadcastAddress4, (uint8_t *) &f4, sizeof(test_struct));
       }
-      Serial.print("\n4");
     }
 
     // Feather 5
-    result5 = esp_now_send(broadcastAddress5, (uint8_t *) &f5, sizeof(test_struct));
-    if (result5 == 0) {
-      Serial.print("\n5");
-    }
-    else {
-      while (result5 != 0) {
-        result5 = esp_now_send(broadcastAddress5, (uint8_t *) &f5, sizeof(test_struct));
+    if (f5.active) {
+      if (f5.respond == 0) { f5.active = false; }
+      f5.result = esp_now_send(broadcastAddress5, (uint8_t *) &f5, sizeof(test_struct));
+      while (f5.result != 0) {
+        f5.result = esp_now_send(broadcastAddress5, (uint8_t *) &f5, sizeof(test_struct));
       }
-      Serial.print("\n5");
     }
 
     // Feather 6
-    result6 = esp_now_send(broadcastAddress6, (uint8_t *) &f6, sizeof(test_struct));
-    if (result6 == 0) {
-      Serial.print("\n6");
-    }
-    else {
-      while (result6 != 0) {
-        result6 = esp_now_send(broadcastAddress6, (uint8_t *) &f6, sizeof(test_struct));
+    if (f6.active) {
+      if (f6.respond == 0) { f6.active = false; }
+      f6.result = esp_now_send(broadcastAddress6, (uint8_t *) &f6, sizeof(test_struct));
+      while (f6.result != 0) {
+        f6.result = esp_now_send(broadcastAddress6, (uint8_t *) &f6, sizeof(test_struct));
       }
-      Serial.print("\n6");
     }
 
     // Feather 7
-    result7 = esp_now_send(broadcastAddress7, (uint8_t *) &f7, sizeof(test_struct));
-    if (result7 == 0) {
-      Serial.print("\n7");
-    }
-    else {
-      while (result7 != 0) {
-        result7 = esp_now_send(broadcastAddress7, (uint8_t *) &f7, sizeof(test_struct));
+    if (f7.active) {
+      if (f7.respond == 0) { f7.active = false; }
+      f7.result = esp_now_send(broadcastAddress7, (uint8_t *) &f7, sizeof(test_struct));
+      while (f7.result != 0) {
+        f7.result = esp_now_send(broadcastAddress7, (uint8_t *) &f7, sizeof(test_struct));
       }
-      Serial.print("\n7");
     }
 
     // Feather 8
-    result8 = esp_now_send(broadcastAddress8, (uint8_t *) &f8, sizeof(test_struct));
-    if (result8 == 0) {
-      Serial.print("\n8");
+    if (f8.active) {
+      if (f8.respond == 0) { f8.active = false; }
+      f8.result = esp_now_send(broadcastAddress8, (uint8_t *) &f8, sizeof(test_struct));
+      while (f8.result != 0) {
+        f8.result = esp_now_send(broadcastAddress8, (uint8_t *) &f8, sizeof(test_struct));
+      }
+    }
+
+    // Check every 100 frames (~3 sec) to see if feather is still active/reactivated
+    count++;
+    if (count%100 == 0) {
+      f1.respond = 0; f1.active = true;
+      f2.respond = 0; f2.active = true;
+      f3.respond = 0; f3.active = true;
+      f4.respond = 0; f4.active = true;
+      f5.respond = 0; f5.active = true;
+      f6.respond = 0; f6.active = true;
+      f7.respond = 0; f7.active = true;
+      f8.respond = 0; f8.active = true;
     }
     else {
-      while (result8 != 0) {
-        result8 = esp_now_send(broadcastAddress8, (uint8_t *) &f8, sizeof(test_struct));
-      }
-      Serial.print("\n8");
+      f1.respond = 1;
+      f2.respond = 1;
+      f3.respond = 1;
+      f4.respond = 1;
+      f5.respond = 1;
+      f6.respond = 1;
+      f7.respond = 1;
+      f8.respond = 1;
     }
 }
 
+void alert() {
+  f1.intensity = 255;
+  f2.intensity = 255;
+  f3.intensity = 255;
+  f4.intensity = 255;
+  f5.intensity = 255;
+  f6.intensity = 255;
+  f7.intensity = 255;
+  f8.intensity = 255;
+  for (int m = 0; m < 10; m++) {
+    delay(100);
+    sendFeathers();
+    delay(250);
+    silenceFeathers();
+  }
+}
 
 void silenceFeathers() {
   f1.intensity = 0;
@@ -171,7 +203,27 @@ void silenceFeathers() {
   f8.intensity = 0;
   sendFeathers();
 }
- 
+
+// Store mac address in readable form
+void getMacs() {
+  snprintf(bA1, sizeof(bA1), "%02x:%02x:%02x:%02x:%02x:%02x",
+           broadcastAddress1[0], broadcastAddress1[1], broadcastAddress1[2], broadcastAddress1[3], broadcastAddress1[4], broadcastAddress1[5]);
+  snprintf(bA2, sizeof(bA2), "%02x:%02x:%02x:%02x:%02x:%02x",
+           broadcastAddress2[0], broadcastAddress2[1], broadcastAddress2[2], broadcastAddress2[3], broadcastAddress2[4], broadcastAddress2[5]);
+  snprintf(bA3, sizeof(bA3), "%02x:%02x:%02x:%02x:%02x:%02x",
+             broadcastAddress3[0], broadcastAddress3[1], broadcastAddress3[2], broadcastAddress3[3], broadcastAddress3[4], broadcastAddress3[5]);
+  snprintf(bA4, sizeof(bA4), "%02x:%02x:%02x:%02x:%02x:%02x",
+             broadcastAddress4[0], broadcastAddress4[1], broadcastAddress4[2], broadcastAddress4[3], broadcastAddress4[4], broadcastAddress4[5]);
+  snprintf(bA5, sizeof(bA5), "%02x:%02x:%02x:%02x:%02x:%02x",
+             broadcastAddress5[0], broadcastAddress5[1], broadcastAddress5[2], broadcastAddress5[3], broadcastAddress5[4], broadcastAddress5[5]);
+  snprintf(bA6, sizeof(bA6), "%02x:%02x:%02x:%02x:%02x:%02x",
+             broadcastAddress6[0], broadcastAddress6[1], broadcastAddress6[2], broadcastAddress6[3], broadcastAddress6[4], broadcastAddress6[5]);
+  snprintf(bA7, sizeof(bA7), "%02x:%02x:%02x:%02x:%02x:%02x",
+             broadcastAddress7[0], broadcastAddress7[1], broadcastAddress7[2], broadcastAddress7[3], broadcastAddress7[4], broadcastAddress7[5]);
+  snprintf(bA8, sizeof(bA8), "%02x:%02x:%02x:%02x:%02x:%02x",
+             broadcastAddress8[0], broadcastAddress8[1], broadcastAddress8[2], broadcastAddress8[3], broadcastAddress8[4], broadcastAddress8[5]);
+}
+
 void setup() {
   Serial.begin(57600);
  
@@ -181,8 +233,8 @@ void setup() {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-  
-  esp_now_register_send_cb(OnDataSent);
+
+  getMacs();
    
   // register peer
   esp_now_peer_info_t peerInfo = {};
@@ -244,6 +296,9 @@ void setup() {
     Serial.println("Failed to add peer");
     return;
   }
+
+  // Register for a callback function that will be called when data is received
+  esp_now_register_recv_cb(OnDataRecv);
 }
  
 void loop() {

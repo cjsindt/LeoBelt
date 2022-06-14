@@ -12,19 +12,33 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
+//REPLACE WITH THE MAC ADDRESS OF THE MASTER FEATHER
+uint8_t broadcastAddressMaster[] = {0x3C, 0x61, 0x05, 0x4A, 0xF7, 0x6C};
+esp_err_t result;
+
 unsigned long t = micros();
 unsigned long t1;
-const int order = 10;
+const int order = 100;
 unsigned int val[order];
 float sum = 0;
 float avg;
 int i;
+int count = 0;
+int cutoff = 34.5;
+bool warned = false;
 
 //Structure example to receive data
 //Must match the sender structure
 typedef struct test_struct {
   int intensity;
+  int respond;
 } test_struct;
+
+typedef struct response {
+  bool received;
+} response;
+
+response sendMessage;
 
 //Create a struct_message called myData
 test_struct myData;
@@ -32,7 +46,14 @@ test_struct myData;
 //callback function that will be executed when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&myData, incomingData, sizeof(myData));
-  sigmaDeltaWrite(0, myData.intensity);
+
+  
+  if (myData.respond == 0) {
+    result = esp_now_send(broadcastAddressMaster, (uint8_t *) &sendMessage, sizeof(response));
+    while (result != 0) {
+      result = esp_now_send(broadcastAddressMaster, (uint8_t *) &sendMessage, sizeof(response));
+    }
+  }
   
   t1 = micros() - t;
   val[i] = (float) t1/1000;
@@ -40,12 +61,28 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   i = i%order;
   
   avg = (float)sum/order;
-  sum -= val[i];
-  Serial.print(avg);
-  Serial.print("\n");
+
+  /*if (avg > cutoff) { count++; }
+  if (count > 90) {
+    if (!warned) {
+      for (int j = 0; j < 20; j++) {
+        sigmaDeltaWrite(0, 255);
+        delay(300);
+        sigmaDeltaWrite(0, 0);
+        delay(100);
+      }
+
+      warned = true;
+    }
+  }*/
   
   sigmaDeltaWrite(0, myData.intensity);
   Serial.print("\ntime: ");
+  sum -= val[i];
+  Serial.print(avg);
+  Serial.print("\nintensity: ");
+  Serial.print(myData.intensity);
+  
   t = micros();
 }
  
@@ -67,14 +104,27 @@ void setup() {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
+
+
+  // register peer
+  esp_now_peer_info_t peerInfo = {};
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
   
-  for (i = 0; i < order - 1; i++) {
-    val[i] = 0;
+  // register first peer  
+  memcpy(peerInfo.peer_addr, broadcastAddressMaster, 6);
+  if (esp_now_add_peer(&peerInfo) != ESP_OK){
+    Serial.println("Failed to add peer");
+    return;
   }
   
   // Once ESPNow is successfully Init, we will register for recv CB to
   // get recv packer info
   esp_now_register_recv_cb(OnDataRecv);
+
+  for (i = 0; i < order - 1; i++) {
+    val[i] = 0;
+  }
 }
  
 void loop() {
