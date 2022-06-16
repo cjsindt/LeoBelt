@@ -73,14 +73,6 @@ int main(int argc, char * argv[]) try
         printf("Can not open comport\n");
         //return(0);
     }
-
-    // Rapid buzz to indicate device is on and all feathers are functioning
-    for (int i=1; i<=8; i++) {
-        RS232_cputs(cport_nr, str_send[256*i-1]);
-        sleep(.5); // .5s
-        RS232_cputs(cport_nr,str_send[256*(i-1)]);
-        sleep(.25); // .25s
-    }
     
     // Create a pipeline to easily configure and start the camera
     rs2::config cfg;
