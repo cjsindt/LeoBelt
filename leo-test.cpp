@@ -249,9 +249,9 @@ int* printPixelDepth(const rs2::depth_frame& depth_frame, float depth_scale) {
         }
     }
 
-    // converting physical distance to 0-255 scale
+    // converting physical distance to 102-255 scale
     for(int i=0; i<=7; i++) {
-        closest[i] = 255 + ((0-255.0)*(closest[i]-.001)/(1.413-.001));
+        closest[i] = 255 + ((102-255.0)*(closest[i]-.001)/(1.413-.001));
         closest[i] = trunc(closest[i]);
     }
 
